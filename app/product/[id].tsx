@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { Alert } from "react-native";
-import { ActivityIndicator, Image, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, Alert, Image, Linking, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { doc, getDoc } from "firebase/firestore";
 import { db, firebaseConfigured } from "../../src/firebase";
@@ -19,6 +18,8 @@ type Product = {
   images?: string[];
   sellerName?: string;
   city?: string;
+  sellerWhatsApp?: string;
+  sellerEmail?: string;
   status?: string;
 };
 
@@ -59,6 +60,8 @@ export default function ProductDetailsScreen() {
             category: data.category ?? data.c,
             imageUrl: data.imageUrl ?? data.imageURL ?? data.image ?? data.i,
             sellerName: data.sellerName ?? data.s,
+            sellerWhatsApp: data.sellerWhatsApp ?? data.whatsapp ?? data.sellerPhone,
+            sellerEmail: data.sellerEmail,
             city: data.city,
           } as Product);
         }
@@ -71,6 +74,28 @@ export default function ProductDetailsScreen() {
     void load();
     return () => { active = false; };
   }, [id]);
+
+  async function contactSeller() {
+    if (!product) return;
+    const phone = (product.sellerWhatsApp || "").replace(/[^0-9]/g, "");
+    const title = product.title || product.name || "your product";
+    const messageText = `Hi, I'm interested in ${title} on ZimMarket. Is it still available? Please confirm the final price and delivery details.`;
+    const email = product.sellerEmail;
+    const url = phone
+      ? `https://wa.me/${phone}?text=${encodeURIComponent(messageText)}`
+      : email
+        ? `mailto:${email}?subject=${encodeURIComponent("ZimMarket enquiry: " + title)}&body=${encodeURIComponent(messageText)}`
+        : "";
+    if (!url) {
+      Alert.alert("Contact not provided", "This seller has not provided a public WhatsApp number or email address. Verify details before arranging payment.");
+      return;
+    }
+    try {
+      await Linking.openURL(url);
+    } catch {
+      Alert.alert("Could not open contact", "Check that WhatsApp or an email app is available on your device.");
+    }
+  }
 
   async function addToCart() {
     if (!id || !product) return;
@@ -108,6 +133,7 @@ export default function ProductDetailsScreen() {
             <Text style={styles.title}>{product.title || product.name || "Untitled listing"}</Text>
             <Text style={styles.price}>{price}</Text>
             <Pressable accessibilityRole="button" style={styles.addButton} onPress={() => void addToCart()}><Text style={styles.addButtonText}>Add to cart</Text></Pressable>
+            <Pressable accessibilityRole="button" style={styles.contactButton} onPress={() => void contactSeller()}><Text style={styles.contactButtonText}>Contact seller</Text></Pressable>
             {!!(product.sellerName || product.city) && <Text style={styles.seller}>{[product.sellerName, product.city].filter(Boolean).join(" · ")}</Text>}
             <View style={styles.divider} />
             <Text style={styles.section}>Product description</Text>
@@ -137,6 +163,8 @@ const styles = StyleSheet.create({
   seller: { color: "#69788B", fontSize: 13, marginTop: 8 },
   addButton: { backgroundColor: "#1769E0", borderRadius: 12, padding: 15, alignItems: "center", marginTop: 18 },
   addButtonText: { color: "#FFFFFF", fontWeight: "900" },
+  contactButton: { borderRadius: 12, borderColor: "#1769E0", borderWidth: 1, padding: 14, alignItems: "center", marginTop: 9, backgroundColor: "#FFFFFF" },
+  contactButtonText: { color: "#1769E0", fontWeight: "900" },
   divider: { height: 1, backgroundColor: "#DCE5F0", marginVertical: 22 },
   section: { fontSize: 17, fontWeight: "900", color: "#0B1F3A", marginBottom: 9 },
   body: { fontSize: 14, color: "#526277", lineHeight: 22 },
