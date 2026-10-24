@@ -33,6 +33,7 @@ export default function HomeScreen() {
   const [error, setError] = useState("");
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("All");
+  const [sortBy, setSortBy] = useState<"recommended" | "name-asc" | "name-desc">("recommended");
 
   const loadProducts = useCallback(async () => {
     if (!firebaseConfigured) {
@@ -73,7 +74,7 @@ export default function HomeScreen() {
 
   const visibleProducts = useMemo(() => {
     const term = search.trim().toLowerCase();
-    return products.filter((item) => {
+    const filtered = products.filter((item) => {
       const title = (item.title || item.name || "").toLowerCase();
       const description = (item.description || "").toLowerCase();
       const itemCategory = (item.category || "").toLowerCase();
@@ -81,7 +82,10 @@ export default function HomeScreen() {
       const matchesCategory = category === "All" || itemCategory === category.toLowerCase();
       return matchesSearch && matchesCategory;
     });
-  }, [products, search, category]);
+    if (sortBy === "name-asc") return [...filtered].sort((a, b) => (a.title || a.name || "").localeCompare(b.title || b.name || ""));
+    if (sortBy === "name-desc") return [...filtered].sort((a, b) => (b.title || b.name || "").localeCompare(a.title || a.name || ""));
+    return filtered;
+  }, [products, search, category, sortBy]);
 
   const money = (item: Product) => {
     if (item.price === undefined || item.price === null || item.price === "") return "Price not provided";
@@ -106,7 +110,7 @@ export default function HomeScreen() {
                 <Text style={styles.brandMini}>ZimMarket</Text>
                 <Text style={styles.location}>Zimbabwe marketplace</Text>
               </View>
-              <View style={styles.topActions}><Pressable accessibilityRole="button" style={styles.accountButton} onPress={() => router.push("/cart")}><Text style={styles.accountButtonText}>Cart</Text></Pressable><Pressable accessibilityRole="button" style={styles.accountButton} onPress={() => router.push("/account")}><Text style={styles.accountButtonText}>Account</Text></Pressable></View>
+              <View style={styles.topActions}><Pressable accessibilityRole="button" style={styles.accountButton} onPress={() => router.push("/saved")}><Text style={styles.accountButtonText}>Saved</Text></Pressable><Pressable accessibilityRole="button" style={styles.accountButton} onPress={() => router.push("/cart")}><Text style={styles.accountButtonText}>Cart</Text></Pressable><Pressable accessibilityRole="button" style={styles.accountButton} onPress={() => router.push("/account")}><Text style={styles.accountButtonText}>Account</Text></Pressable></View>
             </View>
             <View style={styles.hero}>
               <Text style={styles.eyebrow}>BUY LOCAL. SELL LOCAL.</Text>
@@ -128,6 +132,14 @@ export default function HomeScreen() {
                 </Pressable>
               )}
             />
+            <View style={styles.sortRow}>
+              <Text style={styles.sortLabel}>Sort:</Text>
+              {([{ value: "recommended", label: "Recommended" }, { value: "name-asc", label: "Name A–Z" }, { value: "name-desc", label: "Name Z–A" }] as const).map((option) => (
+                <Pressable key={option.value} accessibilityRole="button" accessibilityState={{ selected: sortBy === option.value }} onPress={() => setSortBy(option.value)} style={[styles.sortChip, sortBy === option.value && styles.sortChipSelected]}>
+                  <Text style={[styles.sortText, sortBy === option.value && styles.sortTextSelected]}>{option.label}</Text>
+                </Pressable>
+              ))}
+            </View>
             <View style={styles.listHeading}>
               <Text style={styles.section}>Approved listings</Text>
               {!loading && <Text style={styles.count}>{visibleProducts.length} found</Text>}
@@ -184,6 +196,12 @@ const styles = StyleSheet.create({
   categoryChipSelected: { borderColor: navy, backgroundColor: navy },
   categoryText: { color: "#44546A", fontSize: 12, fontWeight: "700" },
   categoryTextSelected: { color: "#FFFFFF" },
+  sortRow: { flexDirection: "row", alignItems: "center", flexWrap: "wrap", gap: 7, marginTop: -5, marginBottom: 14 },
+  sortLabel: { color: "#69788B", fontSize: 11, fontWeight: "800" },
+  sortChip: { borderWidth: 1, borderColor: "#DCE5F0", backgroundColor: "#FFFFFF", borderRadius: 100, paddingVertical: 7, paddingHorizontal: 10 },
+  sortChipSelected: { backgroundColor: "#EAF2FF", borderColor: "#1769E0" },
+  sortText: { color: "#44546A", fontSize: 11, fontWeight: "700" },
+  sortTextSelected: { color: "#1769E0" },
   listHeading: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
   count: { color: "#69788B", fontSize: 12, marginBottom: 12 },
   columns: { gap: 12, marginBottom: 12 },
