@@ -48,7 +48,7 @@ The canonical marketplace rules are now in the repository root:
 - `firestore.rules` — restricts profiles, seller applications, product moderation, and buyer/seller order-request access.
 - `storage.rules` — permits public reads of product images and limits uploads to approved sellers' image folders.
 - `firebase.json` points to these rule files.
-- `.github/workflows/firebase-rules-check.yml` starts the Firestore and Storage emulators to check the rule configuration.
+- `scripts/test-firebase-rules.mjs` runs 12 emulator-backed allow/deny tests for approved listings, seller approval, product moderation, order privacy/price integrity, and seller image uploads. `.github/workflows/firebase-rules-check.yml` runs those tests against the Firestore and Storage emulators on changes.
 - `.github/workflows/deploy-firebase-security-rules.yml` is manual-only, requires the exact confirmation `DEPLOY`, and uses a separate repository secret named `FIREBASE_RULES_SERVICE_ACCOUNT_ZIMMARKET_D4B35`.
 
 **These files are not yet deployed to the live Firebase project.** Firebase rules deployment replaces the corresponding rules currently in the console. Before deployment, compare the current production rules with `firestore.rules` and `storage.rules`, including any legacy collections or fields in use. The currently deployed older website must also be updated to query only `status == "approved"` before restrictive product-read rules are activated; otherwise its product browsing could break. Hosting deployments do not deploy these security rules.
