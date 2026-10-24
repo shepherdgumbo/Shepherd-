@@ -3,8 +3,16 @@ name: Deploy ZimMarket web to Firebase Hosting
 on:
   workflow_dispatch:
     inputs:
-      confirm_production_deploy:
-        description: Type DEPLOY to replace the current Firebase Hosting website with the checked Expo marketplace.
+      deploy_target:
+        description: Preview is safe for review. Choose live only when you intentionally want to replace the current website.
+        required: true
+        type: choice
+        default: preview
+        options:
+          - preview
+          - live
+      confirm_live_deploy:
+        description: Type DEPLOY only to replace the production website (ignored for preview).
         required: true
         type: string
         default: "NO"
@@ -14,7 +22,7 @@ permissions:
 
 jobs:
   deploy:
-    if: ${{ inputs.confirm_production_deploy == 'DEPLOY' }}
+    if: ${{ inputs.deploy_target == 'preview' || (inputs.deploy_target == 'live' && inputs.confirm_live_deploy == 'DEPLOY') }}
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
@@ -24,7 +32,7 @@ jobs:
           FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_ZIMMARKET_D4B35 }}
         run: |
           if [ -z "$FIREBASE_SERVICE_ACCOUNT" ]; then
-            echo "::error::Missing Actions secret FIREBASE_SERVICE_ACCOUNT_ZIMMARKET_D4B35. The current live site has not been changed. Add a Firebase service-account JSON secret, then run again."
+            echo "::error::Missing Actions secret FIREBASE_SERVICE_ACCOUNT_ZIMMARKET_D4B35. Nothing was deployed. Add a Firebase service-account JSON with Hosting deploy permission as a GitHub Actions secret, then run again."
             exit 1
           fi
 
@@ -45,7 +53,18 @@ jobs:
       - name: Build static Expo web app
         run: npx expo export --platform web
 
-      - name: Deploy web app to Firebase Hosting production
+      - name: Deploy preview channel
+        if: ${{ inputs.deploy_target == 'preview' }}
+        uses: FirebaseExtended/action-hosting-deploy@v0
+        with:
+          repoToken: ${{ secrets.GITHUB_TOKEN }}
+          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_ZIMMARKET_D4B35 }}
+          projectId: zimmarket-d4b35
+          channelId: zimmarket-expo-preview
+          expires: 7d
+
+      - name: Deploy production website
+        if: ${{ inputs.deploy_target == 'live' && inputs.confirm_live_deploy == 'DEPLOY' }}
         uses: FirebaseExtended/action-hosting-deploy@v0
         with:
           repoToken: ${{ secrets.GITHUB_TOKEN }}
