@@ -64,7 +64,7 @@ npx expo export --platform android
 
 ## Android build
 
-An Android debug APK workflow is configured at `.github/workflows/build-android-apk.yml`. It builds the native Android project and uploads `app-debug.apk` as a GitHub Actions artifact without needing an Expo token. The EAS preview and production profiles are also configured in `eas.json`; the EAS workflow is manual-only and requires the `EXPO_TOKEN` GitHub secret. A successful APK artifact and a real-device install still need verification.
+An Android debug APK workflow is configured at `.github/workflows/build-android-apk.yml`. It builds the native Android project and uploads `app-debug.apk` as a GitHub Actions artifact without needing an Expo token. The EAS preview and production profiles are also configured in `eas.json`; the EAS workflow is manual-only and requires the `EXPO_TOKEN` GitHub secret. **A debug APK was successfully built and uploaded on 2026-10-24** (workflow run `40082786586`, commit `7168e906c7abfdae9fe6e07034e7722a9ff6dada`). It has not yet been installed and tested on a physical Android device.
 
 ## Not yet production-verified
 
@@ -72,12 +72,12 @@ An Android debug APK workflow is configured at `.github/workflows/build-android-
 - Seller submissions and photo uploads need a live rules-backed test.
 - The existing public website needs a separate update so it does not expose pending listings or display demo fallback products.
 - Order requests are implemented, but they remain unpaid until sellers confirm details. Real payment processing for EcoCash, OneMoney, bank transfer, or cards; shipping integrations; and refunds are not implemented.
-- A successful EAS Android build, installation test, and production deployment still need to be completed.
+- A signed production Android build, installation test on a physical device, and production deployment still need to be completed.
 
 The application must not be advertised as fully launched until the remaining backend/security and device-build checks pass.
 
 ## Producing an installable APK
 
-The recommended no-token preview build is `.github/workflows/build-android-apk.yml`. Open **Actions → Build ZimMarket Android APK** and run it, or push a change to an app file. When successful, download the `zimmarket-android-debug-apk` artifact from that workflow run and install it on an Android test device.
+The recommended no-token preview build is `.github/workflows/build-android-apk.yml`. The latest successful build is [workflow run 40082786586](https://github.com/shepherdgumbo/Shepherd-/actions/runs/40082786586). Download the `zimmarket-android-debug-apk` artifact from that run; it expires on 2026-11-07. Install it on an Android test device and verify sign-in, approved product browsing, seller application approval, product approval, order requests, and seller responses before inviting real users.
 
 For cloud-managed EAS builds, `.github/workflows/build-android-preview.yml` is manual-only and requires the repository Actions secret `EXPO_TOKEN`. Add it under **Settings → Secrets and variables → Actions → New repository secret**. Never commit the token into source code.
