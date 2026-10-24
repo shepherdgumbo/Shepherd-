@@ -3,6 +3,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { ActivityIndicator, Alert, Image, Linking, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { doc, getDoc } from "firebase/firestore";
+import { getSavedProductIds, toggleSavedProduct } from "../../src/saved";
 import { db, firebaseConfigured } from "../../src/firebase";
 
 type Product = {
@@ -30,6 +31,13 @@ export default function ProductDetailsScreen() {
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState("");
+  const [isSaved, setIsSaved] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+    void getSavedProductIds().then((ids) => { if (active) setIsSaved(!!id && ids.includes(id)); });
+    return () => { active = false; };
+  }, [id]);
 
   useEffect(() => {
     let active = true;
@@ -97,6 +105,17 @@ export default function ProductDetailsScreen() {
     }
   }
 
+  async function toggleSaved() {
+    if (!id) return;
+    try {
+      const result = await toggleSavedProduct(id);
+      setIsSaved(result.saved);
+      Alert.alert(result.saved ? "Saved for later" : "Removed from saved items", result.saved ? "You can find this product in your Saved items list on this device." : "This product is no longer in your saved items.");
+    } catch {
+      Alert.alert("Could not update saved items", "Please try again.");
+    }
+  }
+
   async function addToCart() {
     if (!id || !product) return;
     try {
@@ -133,6 +152,7 @@ export default function ProductDetailsScreen() {
             <Text style={styles.title}>{product.title || product.name || "Untitled listing"}</Text>
             <Text style={styles.price}>{price}</Text>
             <Pressable accessibilityRole="button" style={styles.addButton} onPress={() => void addToCart()}><Text style={styles.addButtonText}>Add to cart</Text></Pressable>
+            <Pressable accessibilityRole="button" accessibilityState={{ selected: isSaved }} style={styles.savedButton} onPress={() => void toggleSaved()}><Text style={styles.savedButtonText}>{isSaved ? "♥ Saved — remove" : "♡ Save for later"}</Text></Pressable>
             <Pressable accessibilityRole="button" style={styles.contactButton} onPress={() => void contactSeller()}><Text style={styles.contactButtonText}>Contact seller</Text></Pressable>
             {!!(product.sellerName || product.city) && <Text style={styles.seller}>{[product.sellerName, product.city].filter(Boolean).join(" · ")}</Text>}
             <View style={styles.divider} />
@@ -163,6 +183,8 @@ const styles = StyleSheet.create({
   seller: { color: "#69788B", fontSize: 13, marginTop: 8 },
   addButton: { backgroundColor: "#1769E0", borderRadius: 12, padding: 15, alignItems: "center", marginTop: 18 },
   addButtonText: { color: "#FFFFFF", fontWeight: "900" },
+  savedButton: { borderRadius: 12, borderColor: "#D5E0EF", borderWidth: 1, padding: 13, alignItems: "center", marginTop: 9, backgroundColor: "#FFFFFF" },
+  savedButtonText: { color: "#0B1F3A", fontWeight: "800" },
   contactButton: { borderRadius: 12, borderColor: "#1769E0", borderWidth: 1, padding: 14, alignItems: "center", marginTop: 9, backgroundColor: "#FFFFFF" },
   contactButtonText: { color: "#1769E0", fontWeight: "900" },
   divider: { height: 1, backgroundColor: "#DCE5F0", marginVertical: 22 },
