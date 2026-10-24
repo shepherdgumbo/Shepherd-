@@ -33,7 +33,8 @@ export default function HomeScreen() {
   const [error, setError] = useState("");
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("All");
-  const [sortBy, setSortBy] = useState<"recommended" | "name-asc" | "name-desc">("recommended");
+  const [sortBy, setSortBy] = useState<"recommended" | "name-asc" | "name-desc" | "price-low" | "price-high">("recommended");
+  const [currencyFilter, setCurrencyFilter] = useState<"All" | "USD" | "ZWL">("All");
 
   const loadProducts = useCallback(async () => {
     if (!firebaseConfigured) {
@@ -80,12 +81,16 @@ export default function HomeScreen() {
       const itemCategory = (item.category || "").toLowerCase();
       const matchesSearch = !term || title.includes(term) || description.includes(term) || itemCategory.includes(term);
       const matchesCategory = category === "All" || itemCategory === category.toLowerCase();
-      return matchesSearch && matchesCategory;
+      const itemCurrency = (item.currency || "USD").toUpperCase();
+      const matchesCurrency = currencyFilter === "All" || itemCurrency === currencyFilter;
+      return matchesSearch && matchesCategory && matchesCurrency;
     });
     if (sortBy === "name-asc") return [...filtered].sort((a, b) => (a.title || a.name || "").localeCompare(b.title || b.name || ""));
     if (sortBy === "name-desc") return [...filtered].sort((a, b) => (b.title || b.name || "").localeCompare(a.title || a.name || ""));
+    if (sortBy === "price-low" && currencyFilter !== "All") return [...filtered].sort((a, b) => Number(a.price) - Number(b.price));
+    if (sortBy === "price-high" && currencyFilter !== "All") return [...filtered].sort((a, b) => Number(b.price) - Number(a.price));
     return filtered;
-  }, [products, search, category, sortBy]);
+  }, [products, search, category, sortBy, currencyFilter]);
 
   const money = (item: Product) => {
     if (item.price === undefined || item.price === null || item.price === "") return "Price not provided";
@@ -133,13 +138,27 @@ export default function HomeScreen() {
               )}
             />
             <View style={styles.sortRow}>
+              <Text style={styles.sortLabel}>Currency:</Text>
+              {(["All", "USD", "ZWL"] as const).map((value) => (
+                <Pressable key={value} accessibilityRole="button" accessibilityState={{ selected: currencyFilter === value }} onPress={() => { setCurrencyFilter(value); if (value === "All" && sortBy.startsWith("price-")) setSortBy("recommended"); }} style={[styles.sortChip, currencyFilter === value && styles.sortChipSelected]}>
+                  <Text style={[styles.sortText, currencyFilter === value && styles.sortTextSelected]}>{value}</Text>
+                </Pressable>
+              ))}
+            </View>
+            <View style={styles.sortRow}>
               <Text style={styles.sortLabel}>Sort:</Text>
-              {([{ value: "recommended", label: "Recommended" }, { value: "name-asc", label: "Name A–Z" }, { value: "name-desc", label: "Name Z–A" }] as const).map((option) => (
+              {(([
+                { value: "recommended", label: "Recommended" },
+                { value: "name-asc", label: "Name A–Z" },
+                { value: "name-desc", label: "Name Z–A" },
+                ...(currencyFilter !== "All" ? [{ value: "price-low" as const, label: "Price low–high" }, { value: "price-high" as const, label: "Price high–low" }] : [])
+              ]) as { value: "recommended" | "name-asc" | "name-desc" | "price-low" | "price-high"; label: string }[]).map((option) => (
                 <Pressable key={option.value} accessibilityRole="button" accessibilityState={{ selected: sortBy === option.value }} onPress={() => setSortBy(option.value)} style={[styles.sortChip, sortBy === option.value && styles.sortChipSelected]}>
                   <Text style={[styles.sortText, sortBy === option.value && styles.sortTextSelected]}>{option.label}</Text>
                 </Pressable>
               ))}
             </View>
+            <Text style={styles.currencyNote}>Price sorting is available only within one selected currency. ZimMarket does not convert prices between USD and ZWL.</Text>
             <View style={styles.listHeading}>
               <Text style={styles.section}>Approved listings</Text>
               {!loading && <Text style={styles.count}>{visibleProducts.length} found</Text>}
