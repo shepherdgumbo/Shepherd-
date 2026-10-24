@@ -74,6 +74,18 @@ ZimMarket is being developed as a Zimbabwe-focused marketplace inspired by the c
 
 The latest customer-facing additions include saved products stored on this device, public seller storefronts, currency filters, alphabetical listing sorting and price sorting within a selected currency. Cross-device wishlist sync, verified ratings/reviews, stock management, shipping workflows, seller analytics and real payment integrations remain future work, and should only be added after the data model, rules and service providers are verified.
 
+## Web/PWA and Firebase Hosting
+
+The same Expo Router app can be exported as a browser site, so the web experience can use the same approved-product queries, saved items, seller stores, currency-aware filters, cart and order request flows as Android. A PWA manifest, SVG install icons, basic offline app-shell caching and Firebase Hosting configuration are now included.
+
+- Web build check: `npx expo export --platform web`
+- Firebase Hosting config: `firebase.json` and `.firebaserc` target `zimmarket-d4b35`.
+- Production deployment workflow: [Deploy ZimMarket web to Firebase Hosting](https://github.com/shepherdgumbo/Shepherd-/actions/workflows/deploy-zimmarket-firebase-hosting.yml).
+
+The deployment is **manual and guarded**. It only proceeds when the workflow input is exactly `DEPLOY` and the repository secret `FIREBASE_SERVICE_ACCOUNT_ZIMMARKET_D4B35` contains a Firebase service-account JSON with Hosting deploy permission. The workflow first checks TypeScript and builds the Expo web export; if the credential is missing or the build fails, Hosting is not changed. A service account key must be stored only as a GitHub Actions secret, never committed to the repository.
+
+This source code/configuration does not itself update the old live Firebase website. The existing site will remain in place until the manual deployment workflow succeeds. After replacing the old website, verify registration/sign-in, approved-only product browsing, seller/admin permissions, cart/order requests, and PWA install behavior in a real browser. Firestore and Storage rules are deliberately not part of the Hosting deployment.
+
 ## Not yet production-verified
 
 - Firestore and Storage rules need to be compared against the existing production rules and tested with customer, seller, and administrator accounts.
