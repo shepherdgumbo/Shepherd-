@@ -1,0 +1,20 @@
+{
+  "expo": {
+    "name": "ZimMarket",
+    "slug": "zimmarket",
+    "scheme": "zimmarket",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "automatic",
+    "newArchEnabled": true,
+    "plugins": ["expo-router"],
+    "experiments": { "typedRoutes": true },
+    "android": {
+      "package": "zw.zimmarket.app",
+      "adaptiveIcon": {
+        "backgroundColor": "#0B1F3A"
+      }
+    },
+    "web": { "bundler": "metro" }
+  }
+}
