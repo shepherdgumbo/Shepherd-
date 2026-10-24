@@ -1,0 +1,62 @@
+name: Deploy ZimMarket Firebase security rules
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirm_deploy:
+        description: Review the current production rules first. Type DEPLOY to replace Firestore and Storage rules with the committed files.
+        required: true
+        type: string
+        default: "NO"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: zimmarket-firebase-rules-production
+  cancel-in-progress: false
+
+jobs:
+  confirmation-not-provided:
+    if: ${{ inputs.confirm_deploy != 'DEPLOY' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Leave production unchanged
+        run: echo "No production Firebase rules were changed. Use exact confirmation DEPLOY only after reviewing the currently published Firebase rules."
+
+  deploy:
+    if: ${{ inputs.confirm_deploy == 'DEPLOY' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out committed rule sources
+        uses: actions/checkout@v7
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: 24
+
+      - name: Validate service-account secret and scope
+        shell: bash
+        env:
+          FIREBASE_RULES_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_RULES_SERVICE_ACCOUNT_ZIMMARKET_D4B35 }}
+        run: |
+          set -euo pipefail
+          if [ -z "$FIREBASE_RULES_SERVICE_ACCOUNT" ]; then
+            echo "::error::Missing FIREBASE_RULES_SERVICE_ACCOUNT_ZIMMARKET_D4B35. Add the JSON of a service account authorized to deploy Firestore and Storage rules for zimmarket-d4b35."
+            exit 1
+          fi
+          SA_FILE="$RUNNER_TEMP/firebase-rules-service-account.json"
+          printf '%s' "$FIREBASE_RULES_SERVICE_ACCOUNT" > "$SA_FILE"
+          node -e '
+            const fs = require("node:fs");
+            const sa = JSON.parse(fs.readFileSync(process.argv[1], "utf8"));
+            if (sa.project_id !== "zimmarket-d4b35" || !sa.client_email || !sa.private_key) {
+              throw new Error("The service account must be valid JSON for Firebase project zimmarket-d4b35.");
+            }
+          ' "$SA_FILE"
+          echo "GOOGLE_APPLICATION_CREDENTIALS=$SA_FILE" >> "$GITHUB_ENV"
+
+      - name: Deploy only reviewed Firestore and Storage rules
+        run: npx --yes firebase-tools@latest deploy --only firestore:rules,storage --project zimmarket-d4b35 --non-interactive
