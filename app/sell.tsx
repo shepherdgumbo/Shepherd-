@@ -13,6 +13,8 @@ export default function SellScreen() {
   const [price, setPrice] = useState("");
   const [currency, setCurrency] = useState<"USD" | "ZWL">("USD");
   const [category, setCategory] = useState("");
+  const [sellerName, setSellerName] = useState("");
+  const [city, setCity] = useState("");
   const [imageUri, setImageUri] = useState("");
   const [busy, setBusy] = useState(false);
 
@@ -80,6 +82,8 @@ export default function SellScreen() {
         price: Number(price),
         currency,
         category: category.trim(),
+        sellerName: sellerName.trim() || profile.data().name || user.displayName || "Seller",
+        city: city.trim() || "Zimbabwe",
         imageUrl,
         sellerId: user.uid,
         status: "pending",
@@ -91,6 +95,8 @@ export default function SellScreen() {
       setDescription("");
       setPrice("");
       setCategory("");
+      setSellerName("");
+      setCity("");
       setImageUri("");
       router.replace("/");
     } catch {
@@ -107,6 +113,8 @@ export default function SellScreen() {
         <Text style={styles.sub}>Tell buyers about your product. Every new listing is reviewed before it becomes public.</Text>
         <TextInput accessibilityLabel="Product title" style={styles.input} placeholder="Product title" value={title} onChangeText={setTitle} maxLength={100} />
         <TextInput accessibilityLabel="Category" style={styles.input} placeholder="Category (e.g. Phones)" value={category} onChangeText={setCategory} maxLength={60} />
+        <TextInput accessibilityLabel="Seller or business name" style={styles.input} placeholder="Seller or business name (optional)" value={sellerName} onChangeText={setSellerName} maxLength={100} />
+        <TextInput accessibilityLabel="City or area" style={styles.input} placeholder="City / area (e.g. Harare)" value={city} onChangeText={setCity} maxLength={80} />
         <TextInput accessibilityLabel="Price" style={styles.input} placeholder="Price" keyboardType="decimal-pad" value={price} onChangeText={setPrice} />
         <Text style={styles.label}>Currency</Text>
         <ViewCurrency value={currency} setValue={setCurrency} />
