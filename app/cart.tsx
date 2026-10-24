@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useState } from "react";
+import { onAuthStateChanged } from "firebase/auth";
 import { ActivityIndicator, Alert, Pressable, SafeAreaView, ScrollView, Share, StyleSheet, Text, TextInput, View } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useRouter } from "expo-router";
-import { collection, doc, getDoc, onAuthStateChanged, serverTimestamp, writeBatch } from "firebase/firestore";
+import { collection, doc, getDoc, serverTimestamp, writeBatch } from "firebase/firestore";
 import { auth, db, firebaseConfigured } from "../src/firebase";
 
 const CART_KEY = "zimmarket_cart_v1";
