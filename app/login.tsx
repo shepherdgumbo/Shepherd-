@@ -37,6 +37,7 @@ export default function LoginScreen() {
           name: name.trim(),
           email: email.trim(),
           role,
+          ...(role === "seller" ? { sellerStatus: "pending" } : {}),
           createdAt: serverTimestamp()
         });
       } else {
