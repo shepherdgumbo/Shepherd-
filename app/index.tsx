@@ -221,6 +221,7 @@ const styles = StyleSheet.create({
   sortChipSelected: { backgroundColor: "#EAF2FF", borderColor: "#1769E0" },
   sortText: { color: "#44546A", fontSize: 11, fontWeight: "700" },
   sortTextSelected: { color: "#1769E0" },
+  currencyNote: { color: "#69788B", fontSize: 10, lineHeight: 15, marginTop: -9, marginBottom: 12 },
   listHeading: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
   count: { color: "#69788B", fontSize: 12, marginBottom: 12 },
   columns: { gap: 12, marginBottom: 12 },
