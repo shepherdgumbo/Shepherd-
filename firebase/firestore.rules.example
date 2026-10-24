@@ -126,6 +126,15 @@ service cloud.firestore {
           'createdAt', 'updatedAt'
         ])
         && request.resource.data.buyerId == request.auth.uid
+        && request.resource.data.buyerEmail == request.auth.token.email
+        && request.resource.data.buyerEmail is string
+        && request.resource.data.sellerId is string
+        && request.resource.data.productId is string
+        && request.resource.data.productTitle is string
+        && request.resource.data.productImageUrl is string
+        && request.resource.data.deliveryNote is string
+        && request.resource.data.sellerName is string
+        && request.resource.data.sellerCity is string
         && request.resource.data.buyerName is string
         && request.resource.data.buyerName.size() > 0
         && request.resource.data.buyerPhone is string
@@ -138,6 +147,7 @@ service cloud.firestore {
         && request.resource.data.quantity <= 99
         && request.resource.data.unitPrice is number
         && request.resource.data.unitPrice >= 0
+        && request.resource.data.total is number
         && request.resource.data.total == request.resource.data.unitPrice * request.resource.data.quantity
         && request.resource.data.currency in ['USD', 'ZWL']
         && request.resource.data.paymentPreference in [
