@@ -1,6 +1,16 @@
 name: Deploy ZimMarket web to Firebase Hosting
 
 on:
+  # Publish a reviewable preview for code changes without replacing the production site.
+  push:
+    branches: [main]
+    paths:
+      - "app/**"
+      - "src/**"
+      - "public/**"
+      - "firebase.json"
+      - ".firebaserc"
+      - ".github/workflows/deploy-zimmarket-firebase-hosting.yml"
   workflow_dispatch:
     inputs:
       deploy_target:
@@ -22,7 +32,7 @@ permissions:
 
 jobs:
   deploy:
-    if: ${{ inputs.deploy_target == 'preview' || (inputs.deploy_target == 'live' && inputs.confirm_live_deploy == 'DEPLOY') }}
+    if: ${{ github.event_name == 'push' || inputs.deploy_target == 'preview' || (inputs.deploy_target == 'live' && inputs.confirm_live_deploy == 'DEPLOY') }}
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
@@ -54,7 +64,7 @@ jobs:
         run: npx expo export --platform web
 
       - name: Deploy preview channel
-        if: ${{ inputs.deploy_target == 'preview' }}
+        if: ${{ github.event_name == 'push' || inputs.deploy_target == 'preview' }}
         uses: FirebaseExtended/action-hosting-deploy@v0
         with:
           repoToken: ${{ secrets.GITHUB_TOKEN }}
