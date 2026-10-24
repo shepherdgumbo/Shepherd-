@@ -14,6 +14,7 @@ export default function SellScreen() {
   const [currency, setCurrency] = useState<"USD" | "ZWL">("USD");
   const [category, setCategory] = useState("");
   const [sellerName, setSellerName] = useState("");
+  const [sellerWhatsApp, setSellerWhatsApp] = useState("");
   const [city, setCity] = useState("");
   const [imageUri, setImageUri] = useState("");
   const [busy, setBusy] = useState(false);
@@ -83,6 +84,7 @@ export default function SellScreen() {
         currency,
         category: category.trim(),
         sellerName: sellerName.trim() || profile.data().name || user.displayName || "Seller",
+        sellerWhatsApp: sellerWhatsApp.trim(),
         city: city.trim() || "Zimbabwe",
         imageUrl,
         sellerId: user.uid,
@@ -96,6 +98,7 @@ export default function SellScreen() {
       setPrice("");
       setCategory("");
       setSellerName("");
+      setSellerWhatsApp("");
       setCity("");
       setImageUri("");
       router.replace("/");
@@ -114,6 +117,8 @@ export default function SellScreen() {
         <TextInput accessibilityLabel="Product title" style={styles.input} placeholder="Product title" value={title} onChangeText={setTitle} maxLength={100} />
         <TextInput accessibilityLabel="Category" style={styles.input} placeholder="Category (e.g. Phones)" value={category} onChangeText={setCategory} maxLength={60} />
         <TextInput accessibilityLabel="Seller or business name" style={styles.input} placeholder="Seller or business name (optional)" value={sellerName} onChangeText={setSellerName} maxLength={100} />
+        <TextInput accessibilityLabel="Business WhatsApp contact" style={styles.input} placeholder="Business WhatsApp e.g. +263771234567 (optional)" value={sellerWhatsApp} onChangeText={setSellerWhatsApp} keyboardType="phone-pad" maxLength={24} />
+        <Text style={styles.privacyNote}>Only enter a number you are happy to display publicly after this listing is approved.</Text>
         <TextInput accessibilityLabel="City or area" style={styles.input} placeholder="City / area (e.g. Harare)" value={city} onChangeText={setCity} maxLength={80} />
         <TextInput accessibilityLabel="Price" style={styles.input} placeholder="Price" keyboardType="decimal-pad" value={price} onChangeText={setPrice} />
         <Text style={styles.label}>Currency</Text>
@@ -151,6 +156,7 @@ const styles = StyleSheet.create({
   sub: { color: "#607086", lineHeight: 21, marginTop: 8, marginBottom: 22 },
   input: { borderWidth: 1, borderColor: "#D7E0EC", backgroundColor: "#FFFFFF", borderRadius: 12, padding: 14, marginBottom: 12, color: "#0B1F3A" },
   multiline: { minHeight: 110, textAlignVertical: "top" },
+  privacyNote: { color: "#69788B", fontSize: 11, lineHeight: 16, marginTop: -5, marginBottom: 12 },
   photoButton: { borderWidth: 1, borderStyle: "dashed", borderColor: "#9BB2CE", backgroundColor: "#EDF4FF", borderRadius: 12, padding: 15, alignItems: "center", marginBottom: 12 },
   photoButtonText: { color: "#1769E0", fontWeight: "800" },
   photoPreview: { height: 180, width: "100%", borderRadius: 12, marginBottom: 12, backgroundColor: "#EAF2FF" },
