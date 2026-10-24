@@ -45,7 +45,18 @@ export default function ProductDetailsScreen() {
         if (!result.exists() || result.data().status !== "approved") {
           setMessage("This listing is not available. Listings are displayed after administrator approval.");
         } else {
-          setProduct(result.data() as Product);
+          const data = result.data();
+          setProduct({
+            ...data,
+            title: data.title ?? data.n ?? data.name,
+            description: data.description ?? data.d,
+            price: data.price ?? data.p,
+            currency: data.currency ?? data.currencyCode ?? "USD",
+            category: data.category ?? data.c,
+            imageUrl: data.imageUrl ?? data.imageURL ?? data.image ?? data.i,
+            sellerName: data.sellerName ?? data.s,
+            city: data.city,
+          } as Product);
         }
       } catch {
         if (active) setMessage("We couldn't load this product. Check your connection and try again.");
@@ -98,7 +109,7 @@ const styles = StyleSheet.create({
   emoji: { fontSize: 58 },
   category: { alignSelf: "flex-start", color: "#1769E0", fontWeight: "800", fontSize: 12, backgroundColor: "#E5F0FF", paddingHorizontal: 10, paddingVertical: 6, borderRadius: 99, marginBottom: 10 },
   title: { fontSize: 25, lineHeight: 32, fontWeight: "900", color: "#0B1F3A" },
-  price: { color: "#1769E0", fontSize: 22, fontWeight: "900", marginTop: 10 },
+  price: { color: "#1769E0", fontSize: 22, fontWeight: "900", marginTop: 10 },\n  seller: { color: "#69788B", fontSize: 13, marginTop: 8 },
   divider: { height: 1, backgroundColor: "#DCE5F0", marginVertical: 22 },
   section: { fontSize: 17, fontWeight: "900", color: "#0B1F3A", marginBottom: 9 },
   body: { fontSize: 14, color: "#526277", lineHeight: 22 },
