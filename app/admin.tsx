@@ -69,7 +69,7 @@ export default function AdminScreen() {
       setListings(productSnapshot.docs.map((d) => ({ id: d.id, ...d.data() } as PendingListing)));
       setSellers(sellerSnapshot.docs
         .map((d) => ({ id: d.id, ...d.data() } as SellerApplication))
-        .filter((item) => item.sellerStatus === "pending"));
+        .filter((item) => item.sellerStatus === "pending" || !item.sellerStatus));
       setError("");
     } catch {
       setError("Could not load the review queue. Confirm this account is an administrator and Firestore rules allow admin review.");
