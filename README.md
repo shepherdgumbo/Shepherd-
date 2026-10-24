@@ -5,9 +5,10 @@ ZimMarket is a Zimbabwe-focused marketplace. This repository contains the Expo /
 ## Implemented in this repository
 
 - Expo Router mobile app and branded marketplace home.
-- Live Firestore product browsing with search and category filtering.
+- Live Firestore product browsing with search, category filtering, and name sorting.
+- Save-for-later wish list and a dedicated Saved Items screen (stored locally on the device).
 - **Approved-only** public listings; no seeded demo products or fabricated reviews.
-- Product detail page with legacy field compatibility for older product documents.
+- Product detail page with legacy field compatibility for older product documents, plus save-for-later action.
 - Firebase email/password sign-in and registration, including password reset.
 - Customer and seller account roles.
 - Seller application queue: new seller accounts start pending and must be approved by an administrator before listing products.
@@ -65,6 +66,12 @@ npx expo export --platform android
 ## Android build
 
 An Android debug APK workflow is configured at `.github/workflows/build-android-apk.yml`. It builds the native Android project and uploads `app-debug.apk` as a GitHub Actions artifact without needing an Expo token. The EAS preview and production profiles are also configured in `eas.json`; the EAS workflow is manual-only and requires the `EXPO_TOKEN` GitHub secret. **A debug APK was successfully built and uploaded on 2026-10-24** (workflow run `40082786586`, commit `7168e906c7abfdae9fe6e07034e7722a9ff6dada`). It has not yet been installed and tested on a physical Android device.
+
+## Amazon-style roadmap and current scope
+
+ZimMarket is being developed as a Zimbabwe-focused marketplace inspired by the customer journey of large marketplaces such as Amazon: discovery, search, category browsing, saved items, a cart, order tracking, seller tools, moderation and trust/safety. It is not a copy of Amazon and does not yet have Amazon-scale fulfilment, verified product reviews, a logistics network, guaranteed delivery, or integrated payments. No ratings, stock counts, seller badges, delivery promises, or product data are fabricated. Prices in USD and ZWL are displayed as listed and must not be compared as though they are the same currency.
+
+The latest customer-facing additions include saved products stored on the current device and alphabetic listing sorting. Cross-device wishlist sync, verified ratings/reviews, stock management, shipping workflows, seller analytics and real payment integrations remain future work, and should only be added after the data model, rules and service providers are verified.
 
 ## Not yet production-verified
 
