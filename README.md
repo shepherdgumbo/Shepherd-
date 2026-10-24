@@ -72,7 +72,7 @@ An Android debug APK workflow is configured at `.github/workflows/build-android-
 
 ZimMarket is being developed as a Zimbabwe-focused marketplace inspired by the customer journey of large marketplaces such as Amazon: discovery, search, category browsing, saved items, a cart, order tracking, seller tools, moderation and trust/safety. It is not a copy of Amazon and does not yet have Amazon-scale fulfilment, verified product reviews, a logistics network, guaranteed delivery, or integrated payments. No ratings, stock counts, seller badges, delivery promises, or product data are fabricated. Prices in USD and ZWL are displayed as listed and must not be compared as though they are the same currency.
 
-The latest customer-facing additions include saved products stored on the current device and alphabetic listing sorting. Cross-device wishlist sync, verified ratings/reviews, stock management, shipping workflows, seller analytics and real payment integrations remain future work, and should only be added after the data model, rules and service providers are verified.
+The latest customer-facing additions include saved products stored on this device, public seller storefronts, currency filters, alphabetical listing sorting and price sorting within a selected currency. Cross-device wishlist sync, verified ratings/reviews, stock management, shipping workflows, seller analytics and real payment integrations remain future work, and should only be added after the data model, rules and service providers are verified.
 
 ## Not yet production-verified
 
