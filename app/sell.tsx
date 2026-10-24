@@ -55,6 +55,15 @@ export default function SellScreen() {
         Alert.alert("Seller account required", "Create or sign in to an account registered as a seller before listing products.");
         return;
       }
+      if (profile.data().sellerStatus !== "approved") {
+        Alert.alert(
+          "Seller approval pending",
+          profile.data().sellerStatus === "rejected"
+            ? "Your seller application was not approved. Contact ZimMarket support for assistance."
+            : "Your seller account must be approved by a ZimMarket administrator before you can publish product listings."
+        );
+        return;
+      }
 
       let imageUrl: string | null = null;
       if (imageUri) {
