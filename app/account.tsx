@@ -56,6 +56,7 @@ export default function AccountScreen() {
             <Text style={styles.body}>{user.email || "Email not available"}</Text>
             <View style={styles.rolePill}><Text style={styles.roleText}>{profile?.role ? profile.role.toUpperCase() : "ACCOUNT"}</Text></View>
             {(profile?.role === "seller") && <Pressable accessibilityRole="button" style={styles.secondary} onPress={() => router.push("/my-listings")}><Text style={styles.secondaryText}>View my listings</Text></Pressable>}
+            {(profile?.role === "admin") && <Pressable accessibilityRole="button" style={styles.secondary} onPress={() => router.push("/admin")}><Text style={styles.secondaryText}>Review pending listings</Text></Pressable>}
             <Pressable accessibilityRole="button" style={styles.primary} onPress={() => router.push("/sell")}><Text style={styles.primaryText}>Submit a product</Text></Pressable>
             <Pressable accessibilityRole="button" style={styles.logout} onPress={() => void logout()}><Text style={styles.logoutText}>Sign out</Text></Pressable>
           </View>
