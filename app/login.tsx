@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Alert, Pressable, SafeAreaView, StyleSheet, Text, TextInput, View } from "react-native";
 import { useRouter } from "expo-router";
-import { createUserWithEmailAndPassword, signInWithEmailAndPassword, updateProfile } from "firebase/auth";
+import { createUserWithEmailAndPassword, sendPasswordResetEmail, signInWithEmailAndPassword, updateProfile } from "firebase/auth";
 import { doc, serverTimestamp, setDoc } from "firebase/firestore";
 import { auth, db, firebaseConfigured } from "../src/firebase";
 
@@ -53,7 +53,7 @@ export default function LoginScreen() {
           <Pressable onPress={() => setRole("seller")} style={[styles.role, role === "seller" && styles.selected]}><Text style={role === "seller" ? styles.selectedText : styles.roleText}>Seller</Text></Pressable>
         </View>}
         <Pressable disabled={busy} onPress={() => void submit()} style={[styles.button, busy && { opacity: 0.6 }]}><Text style={styles.buttonText}>{busy ? "Please wait…" : register ? "Create account" : "Sign in"}</Text></Pressable>
-        <Pressable onPress={() => setRegister(!register)} style={styles.switch}><Text style={styles.switchText}>{register ? "Already registered? Sign in" : "New to ZimMarket? Create an account"}</Text></Pressable>
+        {!register && <Pressable onPress={() => void resetPassword()} style={styles.switch}><Text style={styles.switchText}>Forgot password?</Text></Pressable>}\n        <Pressable onPress={() => setRegister(!register)} style={styles.switch}><Text style={styles.switchText}>{register ? "Already registered? Sign in" : "New to ZimMarket? Create an account"}</Text></Pressable>
         <Text style={styles.note}>Seller listings remain pending until approved by an administrator. Never share your password or payment PIN.</Text>
       </View>
     </SafeAreaView>
