@@ -1,0 +1,21 @@
+// TEMPLATE ONLY: review against the current production Storage rules before deploying.
+// This allows sellers to upload small product images into their own folder.
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    match /products/{sellerId}/{fileName} {
+      allow read: if true;
+
+      allow create, update: if signedIn()
+        && request.auth.uid == sellerId
+        && request.resource.size < 5 * 1024 * 1024
+        && request.resource.contentType.matches('image/.*');
+
+      allow delete: if signedIn() && request.auth.uid == sellerId;
+    }
+  }
+}
