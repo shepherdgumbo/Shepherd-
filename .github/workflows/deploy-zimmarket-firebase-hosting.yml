@@ -1,4 +1,4 @@
-name: Deploy ZimMarket web to Firebase Hosting
+name: Build and preview ZimMarket web on Firebase Hosting
 
 on:
   # Publish a reviewable preview for code changes without replacing the production site.
@@ -36,14 +36,17 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
-      - name: Require Firebase deployment credentials
+      - name: Check whether Firebase deployment credentials are configured
+        id: firebase_credentials
         shell: bash
         env:
           FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_ZIMMARKET_D4B35 }}
         run: |
-          if [ -z "$FIREBASE_SERVICE_ACCOUNT" ]; then
-            echo "::error::Missing Actions secret FIREBASE_SERVICE_ACCOUNT_ZIMMARKET_D4B35. Nothing was deployed. Add a Firebase service-account JSON with Hosting deploy permission as a GitHub Actions secret, then run again."
-            exit 1
+          if [ -n "$FIREBASE_SERVICE_ACCOUNT" ]; then
+            echo "available=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "available=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::Web build will be verified, but Firebase deployment is skipped because FIREBASE_SERVICE_ACCOUNT_ZIMMARKET_D4B35 is not configured."
           fi
 
       - name: Check out repository
@@ -63,8 +66,15 @@ jobs:
       - name: Build static Expo web app
         run: npx expo export --platform web
 
+      - name: Require credentials for explicitly requested production deployment
+        if: ${{ inputs.deploy_target == 'live' && inputs.confirm_live_deploy == 'DEPLOY' && steps.firebase_credentials.outputs.available != 'true' }}
+        shell: bash
+        run: |
+          echo "::error::No production deployment was performed. Configure the repository secret FIREBASE_SERVICE_ACCOUNT_ZIMMARKET_D4B35 with a Firebase service-account JSON that has Hosting deploy permission, then rerun with target=live and confirmation=DEPLOY."
+          exit 1
+
       - name: Deploy preview channel
-        if: ${{ github.event_name == 'push' || inputs.deploy_target == 'preview' }}
+        if: ${{ steps.firebase_credentials.outputs.available == 'true' && (github.event_name == 'push' || inputs.deploy_target == 'preview') }}
         uses: FirebaseExtended/action-hosting-deploy@v0
         with:
           repoToken: ${{ secrets.GITHUB_TOKEN }}
@@ -74,7 +84,7 @@ jobs:
           expires: 7d
 
       - name: Deploy production website
-        if: ${{ inputs.deploy_target == 'live' && inputs.confirm_live_deploy == 'DEPLOY' }}
+        if: ${{ steps.firebase_credentials.outputs.available == 'true' && inputs.deploy_target == 'live' && inputs.confirm_live_deploy == 'DEPLOY' }}
         uses: FirebaseExtended/action-hosting-deploy@v0
         with:
           repoToken: ${{ secrets.GITHUB_TOKEN }}
