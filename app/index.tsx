@@ -43,7 +43,21 @@ export default function HomeScreen() {
       setError("");
       const listingQuery = query(collection(db, "products"), where("status", "==", "approved"));
       const snapshot = await getDocs(listingQuery);
-      const rows = snapshot.docs.map((document) => ({ id: document.id, ...document.data() } as Product));
+      const rows = snapshot.docs.map((document) => {
+        const data = document.data();
+        return {
+          ...data,
+          id: document.id,
+          title: data.title ?? data.n ?? data.name,
+          description: data.description ?? data.d,
+          price: data.price ?? data.p,
+          currency: data.currency ?? data.currencyCode ?? "USD",
+          category: data.category ?? data.c,
+          imageUrl: data.imageUrl ?? data.imageURL ?? data.image ?? data.i,
+          sellerName: data.sellerName ?? data.s,
+          city: data.city,
+        } as Product;
+      });
       setProducts(rows);
     } catch {
       setError("We couldn't load listings. Check your connection or try again later.");
