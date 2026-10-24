@@ -10,8 +10,13 @@ service firebase.storage {
     match /products/{sellerId}/{fileName} {
       allow read: if true;
 
+      // Only administrator-approved sellers may upload product images.
+      // Storage rules read the user's role from Firestore; this consumes
+      // Firestore rule-access quota and requires cross-service rules access.
       allow create, update: if signedIn()
         && request.auth.uid == sellerId
+        && firestore.get(/databases/(default)/documents/users/$(sellerId)).data.role == 'seller'
+        && firestore.get(/databases/(default)/documents/users/$(sellerId)).data.sellerStatus == 'approved'
         && request.resource.size < 5 * 1024 * 1024
         && request.resource.contentType.matches('image/.*');
 
