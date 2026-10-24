@@ -1,5 +1,6 @@
 import { getApp, getApps, initializeApp } from "firebase/app";
 import { getFirestore } from "firebase/firestore";
+import { getStorage } from "firebase/storage";
 
 // These values match the public Firebase web-app config on the existing
 // ZimMarket site. The API key is a client identifier, not an admin secret.
@@ -21,3 +22,4 @@ export const firebaseConfigured = Boolean(
 
 export const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
 export const db = getFirestore(app);
+export const storage = getStorage(app);
