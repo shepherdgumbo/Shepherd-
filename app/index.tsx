@@ -16,6 +16,8 @@ type Product = {
   imageURL?: string;
   image?: string;
   images?: string[];
+  sellerName?: string;
+  city?: string;
   status?: string;
 };
 
@@ -104,7 +106,7 @@ export default function HomeScreen() {
                 <Text style={styles.brandMini}>ZimMarket</Text>
                 <Text style={styles.location}>Zimbabwe marketplace</Text>
               </View>
-              <Pressable accessibilityRole="button" style={styles.accountButton} onPress={() => router.push("/account")}><Text style={styles.accountButtonText}>Account</Text></Pressable>
+              <View style={styles.topActions}><Pressable accessibilityRole="button" style={styles.accountButton} onPress={() => router.push("/cart")}><Text style={styles.accountButtonText}>Cart</Text></Pressable><Pressable accessibilityRole="button" style={styles.accountButton} onPress={() => router.push("/account")}><Text style={styles.accountButtonText}>Account</Text></Pressable></View>
             </View>
             <View style={styles.hero}>
               <Text style={styles.eyebrow}>BUY LOCAL. SELL LOCAL.</Text>
@@ -149,6 +151,7 @@ export default function HomeScreen() {
               <Text numberOfLines={2} style={styles.productTitle}>{item.title || item.name || "Untitled listing"}</Text>
               <Text style={styles.price}>{money(item)}</Text>
               {!!item.category && <Text numberOfLines={1} style={styles.productCategory}>{item.category}</Text>}
+              {!!(item.city || item.sellerName) && <Text numberOfLines={1} style={styles.productLocation}>{[item.sellerName, item.city].filter(Boolean).join(" · ")}</Text>}
               <Text style={styles.viewDetails}>View details →</Text>
             </Pressable>
           );
@@ -165,7 +168,8 @@ const styles = StyleSheet.create({
   topbar: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 16 },
   brandMini: { color: navy, fontSize: 22, fontWeight: "900", letterSpacing: -0.5 },
   location: { color: "#69788B", fontSize: 12, marginTop: 2 },
-  accountButton: { paddingHorizontal: 14, paddingVertical: 10, borderRadius: 12, backgroundColor: "#FFFFFF", borderWidth: 1, borderColor: "#DCE5F0" },
+  topActions: { flexDirection: "row", gap: 7 },
+  accountButton: { paddingHorizontal: 12, paddingVertical: 10, borderRadius: 12, backgroundColor: "#FFFFFF", borderWidth: 1, borderColor: "#DCE5F0" },
   accountButtonText: { color: navy, fontWeight: "700" },
   hero: { backgroundColor: navy, borderRadius: 22, padding: 22, marginBottom: 24 },
   eyebrow: { color: "#83B7FF", fontSize: 11, fontWeight: "900", letterSpacing: 1.3 },
@@ -190,6 +194,7 @@ const styles = StyleSheet.create({
   productTitle: { color: navy, fontWeight: "800", minHeight: 38, fontSize: 13, lineHeight: 18 },
   price: { color: blue, fontWeight: "900", marginTop: 8 },
   productCategory: { color: "#69788B", fontSize: 11, marginTop: 5 },
+  productLocation: { color: "#69788B", fontSize: 10, marginTop: 4 },
   viewDetails: { color: blue, fontSize: 11, fontWeight: "800", marginTop: 9 },
   notice: { backgroundColor: "#FFF4D7", color: "#754B00", padding: 12, borderRadius: 10, marginBottom: 12, lineHeight: 19 },
   error: { color: "#A32626", backgroundColor: "#FDECEC", padding: 12, borderRadius: 10, marginBottom: 12 },
