@@ -1,8 +1,11 @@
 import { useState } from "react";
+import { Image, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, TextInput, Alert } from "react-native";
+import * as ImagePicker from "expo-image-picker";
+import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
 import { Alert, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, TextInput } from "react-native";
 import { useRouter } from "expo-router";
 import { addDoc, collection, doc, getDoc, serverTimestamp } from "firebase/firestore";
-import { auth, db, firebaseConfigured } from "../src/firebase";
+import { auth, db, firebaseConfigured, storage } from "../src/firebase";
 
 export default function SellScreen() {
   const router = useRouter();
@@ -13,7 +16,7 @@ export default function SellScreen() {
   const [category, setCategory] = useState("");
   const [busy, setBusy] = useState(false);
 
-  async function submit() {
+  async function choosePhoto() {\n    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();\n    if (!permission.granted) { Alert.alert("Permission needed", "Allow photo access to attach a product image."); return; }\n    const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ["images"], allowsEditing: true, aspect: [4, 3], quality: 0.8 });\n    if (!result.canceled && result.assets[0]) setImageUri(result.assets[0].uri);\n  }\n\n  async function submit() {
     const user = auth.currentUser;
     if (!firebaseConfigured) { Alert.alert("Setup required", "Firebase configuration has not been added yet."); return; }
     if (!user) { Alert.alert("Sign in required", "Sign in with your seller account before submitting a listing.", [{ text: "Cancel" }, { text: "Sign in", onPress: () => router.push("/login") }]); return; }
@@ -39,7 +42,7 @@ export default function SellScreen() {
         updatedAt: serverTimestamp()
       });
       Alert.alert("Listing submitted", "Your product is pending administrator approval and will not appear publicly until approved.");
-      setTitle(""); setDescription(""); setPrice(""); setCategory("");
+      setTitle(""); setDescription(""); setPrice(""); setCategory(""); setImageUri("");
       router.replace("/");
     } catch {
       Alert.alert("Could not submit", "The listing could not be saved. Check Firebase configuration and Firestore security rules.");
@@ -78,7 +81,7 @@ const styles = StyleSheet.create({
   heading: { color: "#0B1F3A", fontSize: 26, fontWeight: "800" },
   sub: { color: "#607086", lineHeight: 21, marginTop: 8, marginBottom: 22 },
   input: { borderWidth: 1, borderColor: "#D7E0EC", backgroundColor: "#FFFFFF", borderRadius: 12, padding: 14, marginBottom: 12, color: "#0B1F3A" },
-  multiline: { minHeight: 110, textAlignVertical: "top" },
+  multiline: { minHeight: 110, textAlignVertical: "top" },\n  photoButton: { borderWidth: 1, borderStyle: "dashed", borderColor: "#9BB2CE", backgroundColor: "#EDF4FF", borderRadius: 12, padding: 15, alignItems: "center", marginBottom: 12 },\n  photoButtonText: { color: "#1769E0", fontWeight: "800" },\n  photoPreview: { height: 180, width: "100%", borderRadius: 12, marginBottom: 12, backgroundColor: "#EAF2FF" },
   label: { color: "#0B1F3A", fontWeight: "700", marginBottom: 8 },
   currency: { borderWidth: 1, borderColor: "#D7E0EC", paddingVertical: 10, paddingHorizontal: 18, borderRadius: 10, marginRight: 8 },
   currencySelected: { backgroundColor: "#0B1F3A", borderColor: "#0B1F3A" },
