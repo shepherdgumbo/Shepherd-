@@ -5,7 +5,8 @@ ZimMarket is a Zimbabwe-focused marketplace. This repository contains the Expo /
 ## Implemented in this repository
 
 - Expo Router mobile app and branded marketplace home.
-- Live Firestore product browsing with search, category filtering, and name sorting.
+- Live Firestore product browsing with search, category filtering, currency filters, name sorting, and price sorting within one selected currency.
+- Public seller storefronts that display only approved listings.
 - Save-for-later wish list and a dedicated Saved Items screen (stored locally on the device).
 - **Approved-only** public listings; no seeded demo products or fabricated reviews.
 - Product detail page with legacy field compatibility for older product documents, plus save-for-later action.
