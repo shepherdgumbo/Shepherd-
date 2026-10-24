@@ -15,6 +15,8 @@ type Product = {
   imageURL?: string;
   image?: string;
   images?: string[];
+  sellerName?: string;
+  city?: string;
   status?: string;
 };
 
@@ -85,6 +87,7 @@ export default function ProductDetailsScreen() {
             {!!product.category && <Text style={styles.category}>{product.category}</Text>}
             <Text style={styles.title}>{product.title || product.name || "Untitled listing"}</Text>
             <Text style={styles.price}>{price}</Text>
+            {!!(product.sellerName || product.city) && <Text style={styles.seller}>{[product.sellerName, product.city].filter(Boolean).join(" · ")}</Text>}
             <View style={styles.divider} />
             <Text style={styles.section}>Product description</Text>
             <Text style={styles.body}>{product.description?.trim() || "The seller has not provided a description."}</Text>
