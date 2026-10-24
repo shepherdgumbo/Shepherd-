@@ -1,0 +1,220 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return signedIn()
+        && exists(/databases/$(database)/documents/users/$(request.auth.uid))
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+
+    function isSeller() {
+      return signedIn()
+        && exists(/databases/$(database)/documents/users/$(request.auth.uid))
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'seller'
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.sellerStatus == 'approved';
+    }
+
+    match /users/{userId} {
+      allow create: if signedIn()
+        && request.auth.uid == userId
+        && request.resource.data.keys().hasAll(['uid', 'name', 'email', 'role', 'createdAt'])
+        && request.resource.data.keys().hasOnly([
+          'uid', 'name', 'email', 'role', 'sellerStatus', 'createdAt'
+        ])
+        && request.resource.data.uid == userId
+        && request.resource.data.name is string
+        && request.resource.data.name.size() > 0
+        && request.resource.data.name.size() <= 100
+        && request.resource.data.email == request.auth.token.email
+        && request.resource.data.createdAt == request.time
+        && (
+          (request.resource.data.role == 'customer'
+            && !('sellerStatus' in request.resource.data))
+          ||
+          (request.resource.data.role == 'seller'
+            && request.resource.data.sellerStatus == 'pending')
+        );
+
+      allow read: if (signedIn() && request.auth.uid == userId) || isAdmin();
+
+      // Ordinary users cannot promote themselves or edit review fields.
+      allow update: if isAdmin()
+        || (signedIn()
+          && request.auth.uid == userId
+          && request.resource.data.diff(resource.data).affectedKeys()
+            .hasOnly(['name', 'email', 'photoURL', 'updatedAt'])
+          && (!('name' in request.resource.data)
+            || (request.resource.data.name is string
+              && request.resource.data.name.size() > 0
+              && request.resource.data.name.size() <= 100))
+          && (!('email' in request.resource.data)
+            || request.resource.data.email == request.auth.token.email));
+
+      allow delete: if isAdmin();
+    }
+
+    match /products/{productId} {
+      // Public shoppers see only approved listings; sellers can see their own submissions.
+      allow get, list: if resource.data.status == 'approved'
+        || isAdmin()
+        || (signedIn() && resource.data.sellerId == request.auth.uid);
+
+      allow create: if isSeller()
+        && request.resource.data.keys().hasAll([
+          'title', 'description', 'price', 'currency', 'category',
+          'sellerName', 'sellerWhatsApp', 'city', 'imageUrl',
+          'sellerId', 'status', 'createdAt', 'updatedAt'
+        ])
+        && request.resource.data.keys().hasOnly([
+          'title', 'description', 'price', 'currency', 'category',
+          'sellerName', 'sellerWhatsApp', 'city', 'imageUrl',
+          'sellerId', 'status', 'createdAt', 'updatedAt'
+        ])
+        && request.resource.data.sellerId == request.auth.uid
+        && request.resource.data.status == 'pending'
+        && request.resource.data.title is string
+        && request.resource.data.title.size() > 0
+        && request.resource.data.title.size() <= 160
+        && request.resource.data.description is string
+        && request.resource.data.description.size() > 0
+        && request.resource.data.description.size() <= 5000
+        && request.resource.data.category is string
+        && request.resource.data.category.size() > 0
+        && request.resource.data.category.size() <= 60
+        && request.resource.data.sellerName is string
+        && request.resource.data.sellerWhatsApp is string
+        && request.resource.data.city is string
+        && (request.resource.data.imageUrl == null || request.resource.data.imageUrl is string)
+        && request.resource.data.price is number
+        && request.resource.data.price >= 0
+        && request.resource.data.currency in ['USD', 'ZWL']
+        && request.resource.data.createdAt == request.time
+        && request.resource.data.updatedAt == request.time;
+
+      // Sellers may edit listing details but cannot change ownership or review status.
+      allow update: if isAdmin()
+        || (isSeller()
+          && resource.data.sellerId == request.auth.uid
+          && request.resource.data.sellerId == resource.data.sellerId
+          && request.resource.data.status == resource.data.status
+          && request.resource.data.diff(resource.data).affectedKeys()
+            .hasOnly([
+              'title', 'description', 'price', 'currency', 'category',
+              'sellerName', 'sellerWhatsApp', 'city', 'imageUrl', 'updatedAt'
+            ])
+          && request.resource.data.price is number
+          && request.resource.data.price >= 0
+          && request.resource.data.currency in ['USD', 'ZWL']);
+
+      allow delete: if isAdmin()
+        || (isSeller()
+          && resource.data.sellerId == request.auth.uid
+          && resource.data.status != 'approved');
+    }
+
+    match /orders/{orderId} {
+      function validOrderProduct() {
+        let product = get(/databases/$(database)/documents/products/$(request.resource.data.productId)).data;
+        let seller = get(/databases/$(database)/documents/users/$(request.resource.data.sellerId)).data;
+        let currentPrice = ('price' in product) ? product.price : product.p;
+        let currentCurrency = ('currency' in product)
+          ? product.currency
+          : (('currencyCode' in product) ? product.currencyCode : 'USD');
+        let currentTitle = ('title' in product)
+          ? product.title
+          : (('n' in product) ? product.n : product.name);
+        return product.status == 'approved'
+          && product.sellerId == request.resource.data.sellerId
+          && seller.role == 'seller'
+          && seller.sellerStatus == 'approved'
+          && currentPrice == request.resource.data.unitPrice
+          && currentCurrency == request.resource.data.currency
+          && currentTitle == request.resource.data.productTitle;
+      }
+
+      allow get, list: if isAdmin()
+        || (signedIn() && (
+          resource.data.buyerId == request.auth.uid
+          || resource.data.sellerId == request.auth.uid
+        ));
+
+      // Orders are requests only; this rule does not collect payments.
+      allow create: if signedIn()
+        && request.resource.data.keys().hasAll([
+          'buyerId', 'buyerEmail', 'buyerName', 'buyerPhone', 'deliveryArea',
+          'deliveryNote', 'buyerConsent', 'sellerId', 'sellerName', 'sellerCity',
+          'productId', 'productTitle', 'productImageUrl', 'quantity', 'unitPrice',
+          'total', 'currency', 'paymentPreference', 'paymentStatus', 'status',
+          'createdAt', 'updatedAt'
+        ])
+        && request.resource.data.keys().hasOnly([
+          'buyerId', 'buyerEmail', 'buyerName', 'buyerPhone', 'deliveryArea',
+          'deliveryNote', 'buyerConsent', 'sellerId', 'sellerName', 'sellerCity',
+          'productId', 'productTitle', 'productImageUrl', 'quantity', 'unitPrice',
+          'total', 'currency', 'paymentPreference', 'paymentStatus', 'status',
+          'createdAt', 'updatedAt'
+        ])
+        && request.resource.data.buyerId == request.auth.uid
+        && request.resource.data.buyerEmail == request.auth.token.email
+        && request.resource.data.buyerName is string
+        && request.resource.data.buyerName.size() > 0
+        && request.resource.data.buyerName.size() <= 100
+        && request.resource.data.buyerPhone is string
+        && request.resource.data.buyerPhone.size() > 0
+        && request.resource.data.buyerPhone.size() <= 25
+        && request.resource.data.deliveryArea is string
+        && request.resource.data.deliveryArea.size() > 0
+        && request.resource.data.deliveryArea.size() <= 100
+        && request.resource.data.deliveryNote is string
+        && request.resource.data.deliveryNote.size() <= 400
+        && request.resource.data.buyerConsent == true
+        && request.resource.data.sellerId is string
+        && request.resource.data.sellerName is string
+        && request.resource.data.sellerCity is string
+        && request.resource.data.productId is string
+        && request.resource.data.productTitle is string
+        && request.resource.data.productImageUrl is string
+        && request.resource.data.quantity is int
+        && request.resource.data.quantity >= 1
+        && request.resource.data.quantity <= 99
+        && request.resource.data.unitPrice is number
+        && request.resource.data.unitPrice >= 0
+        && request.resource.data.total is number
+        && request.resource.data.total == request.resource.data.unitPrice * request.resource.data.quantity
+        && request.resource.data.currency in ['USD', 'ZWL']
+        && request.resource.data.paymentPreference in [
+          'Cash on delivery', 'EcoCash', 'OneMoney', 'Bank transfer', 'Discuss with seller'
+        ]
+        && request.resource.data.paymentStatus == 'unpaid'
+        && request.resource.data.status == 'pending'
+        && request.resource.data.createdAt == request.time
+        && request.resource.data.updatedAt == request.time
+        && validOrderProduct();
+
+      // Seller and buyer transitions are intentionally narrow.
+      allow update: if isAdmin()
+        || (signedIn()
+          && resource.data.sellerId == request.auth.uid
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'updatedAt'])
+          && (
+            (resource.data.status == 'pending' && request.resource.data.status in ['accepted', 'rejected'])
+            || (resource.data.status == 'accepted' && request.resource.data.status == 'completed')
+          ))
+        || (signedIn()
+          && resource.data.buyerId == request.auth.uid
+          && resource.data.status == 'pending'
+          && request.resource.data.status == 'cancelled'
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'updatedAt']));
+
+      allow delete: if isAdmin();
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
