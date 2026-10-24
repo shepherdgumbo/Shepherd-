@@ -55,6 +55,9 @@ export default function AccountScreen() {
             <Text style={styles.cardTitle}>{profile?.name || user.displayName || "ZimMarket member"}</Text>
             <Text style={styles.body}>{user.email || "Email not available"}</Text>
             <View style={styles.rolePill}><Text style={styles.roleText}>{profile?.role ? profile.role.toUpperCase() : "ACCOUNT"}</Text></View>
+            {profile?.role === "seller" && <Text style={styles.sellerStatus}>
+              {profile.sellerStatus === "approved" ? "Seller status: approved" : profile.sellerStatus === "rejected" ? "Seller status: not approved. Contact support if you think this is a mistake." : "Seller status: waiting for administrator approval. Product publishing is unavailable until approved."}
+            </Text>}
             {(profile?.role === "seller") && <Pressable accessibilityRole="button" style={styles.secondary} onPress={() => router.push("/my-listings")}><Text style={styles.secondaryText}>View my listings</Text></Pressable>}
             {(profile?.role === "admin") && <Pressable accessibilityRole="button" style={styles.secondary} onPress={() => router.push("/admin")}><Text style={styles.secondaryText}>Review pending listings</Text></Pressable>}
             <Pressable accessibilityRole="button" style={styles.primary} onPress={() => router.push("/sell")}><Text style={styles.primaryText}>Submit a product</Text></Pressable>
@@ -80,6 +83,7 @@ const styles = StyleSheet.create({
   body: { color: "#526277", lineHeight: 21 },
   rolePill: { alignSelf: "flex-start", backgroundColor: "#EAF2FF", borderRadius: 99, paddingVertical: 6, paddingHorizontal: 10, marginTop: 13, marginBottom: 10 },
   roleText: { color: "#1769E0", fontSize: 11, fontWeight: "900" },
+  sellerStatus: { color: "#526277", fontSize: 12, lineHeight: 18, marginTop: 4 },
   primary: { marginTop: 12, backgroundColor: "#1769E0", alignItems: "center", padding: 14, borderRadius: 12 },
   primaryText: { color: "#FFFFFF", fontWeight: "900" },
   secondary: { backgroundColor: "#EAF2FF", alignItems: "center", padding: 13, borderRadius: 12, marginTop: 8 },
