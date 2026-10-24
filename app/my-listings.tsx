@@ -40,7 +40,16 @@ export default function MyListingsScreen() {
         setError("");
         const snapshot = await getDocs(query(collection(db, "products"), where("sellerId", "==", user.uid)));
         if (!active) return;
-        setListings(snapshot.docs.map((d) => ({ id: d.id, ...d.data() } as Listing)));
+        setListings(snapshot.docs.map((d) => {
+          const data = d.data();
+          return {
+            ...data,
+            id: d.id,
+            title: data.title ?? data.n ?? data.name,
+            price: data.price ?? data.p,
+            category: data.category ?? data.c,
+          } as Listing;
+        }));
       } catch {
         if (active) setError("We couldn't load your listings. Check your connection and Firestore rules.");
       } finally {
