@@ -1,16 +1,6 @@
 name: Build ZimMarket Android preview
 
 on:
-  push:
-    branches: [main]
-    paths:
-      - "app/**"
-      - "src/**"
-      - "package.json"
-      - "app.json"
-      - "eas.json"
-      - "firebase/**"
-      - ".github/workflows/build-android-preview.yml"
   workflow_dispatch:
 
 permissions:
