@@ -16,14 +16,24 @@ service cloud.firestore {
     function isSeller() {
       return signedIn()
         && exists(/databases/$(database)/documents/users/$(request.auth.uid))
-        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'seller';
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'seller'
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.sellerStatus == 'approved';
     }
 
     match /users/{userId} {
       allow create: if signedIn()
         && request.auth.uid == userId
         && request.resource.data.uid == userId
-        && request.resource.data.role in ['customer', 'seller'];
+        && request.resource.data.keys().hasOnly([
+          'uid', 'name', 'email', 'role', 'sellerStatus', 'createdAt'
+        ])
+        && (
+          (request.resource.data.role == 'customer'
+            && !('sellerStatus' in request.resource.data))
+          ||
+          (request.resource.data.role == 'seller'
+            && request.resource.data.sellerStatus == 'pending')
+        );
 
       allow read: if (signedIn() && request.auth.uid == userId) || isAdmin();
 
