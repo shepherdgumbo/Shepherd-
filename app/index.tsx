@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { ActivityIndicator, FlatList, Image, Pressable, RefreshControl, SafeAreaView, StyleSheet, Text, TextInput, View } from "react-native";
-import { useRouter } from "expo-router";
+import { ActivityIndicator, Alert, FlatList, Image, Pressable, RefreshControl, SafeAreaView, StyleSheet, Text, TextInput, View } from "react-native";
+import { useFocusEffect, useRouter } from "expo-router";
 import { collection, getDocs, query, where } from "firebase/firestore";
 import { db, firebaseConfigured } from "../src/firebase";
+import { addProductToCart, getCartItemCount } from "../src/cart";
 
 type Product = {
   id: string;
@@ -35,6 +36,14 @@ export default function HomeScreen() {
   const [category, setCategory] = useState("All");
   const [sortBy, setSortBy] = useState<"recommended" | "name-asc" | "name-desc" | "price-low" | "price-high">("recommended");
   const [currencyFilter, setCurrencyFilter] = useState<"All" | "USD" | "ZWL">("All");
+  const [cartCount, setCartCount] = useState(0);
+  const [cartNotice, setCartNotice] = useState("");
+
+  useFocusEffect(useCallback(() => {
+    let active = true;
+    void getCartItemCount().then((count) => { if (active) setCartCount(count); });
+    return () => { active = false; };
+  }, []));
 
   const loadProducts = useCallback(async () => {
     if (!firebaseConfigured) {
@@ -98,6 +107,16 @@ export default function HomeScreen() {
   };
   const imageSource = (item: Product) => item.imageUrl || item.imageURL || item.image || item.images?.[0] || "";
 
+  async function quickAddToCart(productId: string, title: string) {
+    try {
+      const count = await addProductToCart(productId);
+      setCartCount(count);
+      setCartNotice(`${title} added to your cart. Your cart has ${count} item${count === 1 ? "" : "s"}.`);
+    } catch {
+      Alert.alert("Could not update cart", "Please check your saved cart and try again.");
+    }
+  }
+
   return (
     <SafeAreaView style={styles.safe}>
       <FlatList
@@ -115,7 +134,7 @@ export default function HomeScreen() {
                 <Text style={styles.brandMini}>ZimMarket</Text>
                 <Text style={styles.location}>Zimbabwe marketplace</Text>
               </View>
-              <View style={styles.topActions}><Pressable accessibilityRole="button" style={styles.accountButton} onPress={() => router.push("/saved")}><Text style={styles.accountButtonText}>Saved</Text></Pressable><Pressable accessibilityRole="button" style={styles.accountButton} onPress={() => router.push("/cart")}><Text style={styles.accountButtonText}>Cart</Text></Pressable><Pressable accessibilityRole="button" style={styles.accountButton} onPress={() => router.push("/account")}><Text style={styles.accountButtonText}>Account</Text></Pressable></View>
+              <View style={styles.topActions}><Pressable accessibilityRole="button" style={styles.accountButton} onPress={() => router.push("/saved")}><Text style={styles.accountButtonText}>Saved</Text></Pressable><Pressable accessibilityRole="button" accessibilityLabel={`Shopping cart, ${cartCount} items`} style={styles.accountButton} onPress={() => router.push("/cart")}><Text style={styles.accountButtonText}>{cartCount > 0 ? `Cart (${cartCount})` : "Cart"}</Text></Pressable><Pressable accessibilityRole="button" style={styles.accountButton} onPress={() => router.push("/account")}><Text style={styles.accountButtonText}>Account</Text></Pressable></View>
             </View>
             <View style={styles.hero}>
               <Text style={styles.eyebrow}>BUY LOCAL. SELL LOCAL.</Text>
@@ -123,6 +142,7 @@ export default function HomeScreen() {
               <Text style={styles.copy}>Discover products from local sellers. Browse approved listings and compare prices in USD or ZWL.</Text>
               <Pressable accessibilityRole="button" style={styles.primary} onPress={() => router.push("/sell")}><Text style={styles.primaryText}>＋ Start selling</Text></Pressable>
             </View>
+            {!!cartNotice && <View style={styles.cartNotice}><Text style={styles.cartNoticeText}>{cartNotice}</Text><Pressable accessibilityRole="button" onPress={() => router.push("/cart")}><Text style={styles.cartNoticeLink}>View cart →</Text></Pressable></View>}
             <Text style={styles.section}>Find your next deal</Text>
             <TextInput accessibilityLabel="Search marketplace" style={styles.search} placeholder="Search products, categories…" placeholderTextColor="#78879A" value={search} onChangeText={setSearch} returnKeyType="search" />
             <FlatList
@@ -176,15 +196,21 @@ export default function HomeScreen() {
         }
         renderItem={({ item }) => {
           const uri = imageSource(item);
+          const title = item.title || item.name || "Untitled listing";
           return (
-            <Pressable accessibilityRole="button" accessibilityLabel={`View ${item.title || item.name || "product"}`} style={styles.product} onPress={() => router.push(`/product/${item.id}`)}>
-              {uri ? <Image source={{ uri }} style={styles.productImage} resizeMode="cover" /> : <View style={styles.productPlaceholder}><Text style={styles.productEmoji}>🛍️</Text></View>}
-              <Text numberOfLines={2} style={styles.productTitle}>{item.title || item.name || "Untitled listing"}</Text>
-              <Text style={styles.price}>{money(item)}</Text>
-              {!!item.category && <Text numberOfLines={1} style={styles.productCategory}>{item.category}</Text>}
-              {!!(item.city || item.sellerName) && <Text numberOfLines={1} style={styles.productLocation}>{[item.sellerName, item.city].filter(Boolean).join(" · ")}</Text>}
-              <Text style={styles.viewDetails}>View details →</Text>
-            </Pressable>
+            <View style={styles.product}>
+              <Pressable accessibilityRole="button" accessibilityLabel={`View ${title}`} style={styles.productDetails} onPress={() => router.push(`/product/${item.id}`)}>
+                {uri ? <Image source={{ uri }} style={styles.productImage} resizeMode="cover" /> : <View style={styles.productPlaceholder}><Text style={styles.productEmoji}>🛍️</Text></View>}
+                <Text numberOfLines={2} style={styles.productTitle}>{title}</Text>
+                <Text style={styles.price}>{money(item)}</Text>
+                {!!item.category && <Text numberOfLines={1} style={styles.productCategory}>{item.category}</Text>}
+                {!!(item.city || item.sellerName) && <Text numberOfLines={1} style={styles.productLocation}>{[item.sellerName, item.city].filter(Boolean).join(" · ")}</Text>}
+                <Text style={styles.viewDetails}>View details →</Text>
+              </Pressable>
+              <Pressable accessibilityRole="button" accessibilityLabel={`Add ${title} to cart`} style={styles.quickAdd} onPress={() => void quickAddToCart(item.id, title)}>
+                <Text style={styles.quickAddText}>＋ Add to cart</Text>
+              </Pressable>
+            </View>
           );
         }}
         ListFooterComponent={<Text style={styles.footer}>Buy safely: check product details and verify the seller before paying. EcoCash, OneMoney, bank transfer, and cash on delivery are not represented as integrated payment services unless explicitly offered and confirmed for a transaction.</Text>}
@@ -226,8 +252,14 @@ const styles = StyleSheet.create({
   count: { color: "#69788B", fontSize: 12, marginBottom: 12 },
   columns: { gap: 12, marginBottom: 12 },
   product: { backgroundColor: "#FFFFFF", borderRadius: 16, padding: 10, flex: 1, borderWidth: 1, borderColor: "#E4EAF2" },
-  productImage: { height: 110, backgroundColor: "#EAF2FF", borderRadius: 12, marginBottom: 10 },
-  productPlaceholder: { height: 110, backgroundColor: "#EAF2FF", borderRadius: 12, alignItems: "center", justifyContent: "center", marginBottom: 10 },
+  productDetails: { flex: 1 },
+  quickAdd: { backgroundColor: blue, borderRadius: 10, paddingVertical: 10, paddingHorizontal: 8, alignItems: "center", marginTop: 10 },
+  quickAddText: { color: "#FFFFFF", fontSize: 12, fontWeight: "900" },
+  cartNotice: { backgroundColor: "#E8F7EF", borderColor: "#B7E4C7", borderWidth: 1, borderRadius: 12, padding: 12, marginBottom: 16, gap: 7 },
+  cartNoticeText: { color: "#145D38", fontSize: 12, lineHeight: 18, fontWeight: "700" },
+  cartNoticeLink: { color: "#1769E0", fontSize: 12, fontWeight: "900" },
+  productImage: { height: 110, width: "100%", backgroundColor: "#EAF2FF", borderRadius: 12, marginBottom: 10 },
+  productPlaceholder: { height: 110, width: "100%", backgroundColor: "#EAF2FF", borderRadius: 12, alignItems: "center", justifyContent: "center", marginBottom: 10 },
   productEmoji: { fontSize: 34 },
   productTitle: { color: navy, fontWeight: "800", minHeight: 38, fontSize: 13, lineHeight: 18 },
   price: { color: blue, fontWeight: "900", marginTop: 8 },
