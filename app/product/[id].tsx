@@ -21,6 +21,7 @@ type Product = {
   city?: string;
   sellerWhatsApp?: string;
   sellerEmail?: string;
+  sellerId?: string;
   status?: string;
 };
 
@@ -70,6 +71,7 @@ export default function ProductDetailsScreen() {
             sellerName: data.sellerName ?? data.s,
             sellerWhatsApp: data.sellerWhatsApp ?? data.whatsapp ?? data.sellerPhone,
             sellerEmail: data.sellerEmail,
+            sellerId: data.sellerId,
             city: data.city,
           } as Product);
         }
@@ -155,6 +157,7 @@ export default function ProductDetailsScreen() {
             <Pressable accessibilityRole="button" accessibilityState={{ selected: isSaved }} style={styles.savedButton} onPress={() => void toggleSaved()}><Text style={styles.savedButtonText}>{isSaved ? "♥ Saved — remove" : "♡ Save for later"}</Text></Pressable>
             <Pressable accessibilityRole="button" style={styles.contactButton} onPress={() => void contactSeller()}><Text style={styles.contactButtonText}>Contact seller</Text></Pressable>
             {!!(product.sellerName || product.city) && <Text style={styles.seller}>{[product.sellerName, product.city].filter(Boolean).join(" · ")}</Text>}
+            {!!product.sellerId && <Pressable accessibilityRole="button" style={styles.storeButton} onPress={() => router.push(`/store/${product.sellerId}`)}><Text style={styles.storeButtonText}>Browse this seller’s store →</Text></Pressable>}
             <View style={styles.divider} />
             <Text style={styles.section}>Product description</Text>
             <Text style={styles.body}>{product.description?.trim() || "The seller has not provided a description."}</Text>
@@ -187,6 +190,8 @@ const styles = StyleSheet.create({
   savedButtonText: { color: "#0B1F3A", fontWeight: "800" },
   contactButton: { borderRadius: 12, borderColor: "#1769E0", borderWidth: 1, padding: 14, alignItems: "center", marginTop: 9, backgroundColor: "#FFFFFF" },
   contactButtonText: { color: "#1769E0", fontWeight: "900" },
+  storeButton: { alignSelf: "flex-start", paddingVertical: 11, paddingHorizontal: 2 },
+  storeButtonText: { color: "#1769E0", fontWeight: "800", fontSize: 12 },
   divider: { height: 1, backgroundColor: "#DCE5F0", marginVertical: 22 },
   section: { fontSize: 17, fontWeight: "900", color: "#0B1F3A", marginBottom: 9 },
   body: { fontSize: 14, color: "#526277", lineHeight: 22 },
