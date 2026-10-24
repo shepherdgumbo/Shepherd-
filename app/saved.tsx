@@ -42,12 +42,12 @@ export default function SavedProductsScreen() {
       const snapshots = await Promise.all(ids.map(async (id) => {
         try {
           const snapshot = await getDoc(doc(db, "products", id));
-          if (!snapshot.exists()) return null;
+          if (!snapshot.exists()) return { type: "unavailable" as const, id };
           const data = snapshot.data();
-          if (data.status !== "approved") return null;
+          if (data.status !== "approved") return { type: "unavailable" as const, id };
           const rawPrice = data.price ?? data.p;
           const hasPrice = rawPrice !== undefined && rawPrice !== null && rawPrice !== "";
-          return {
+          const product = {
             id,
             title: String(data.title ?? data.n ?? data.name ?? "Untitled listing"),
             price: hasPrice ? `${String(data.currency ?? data.currencyCode ?? "USD")} ${String(rawPrice)}` : "Price not provided",
@@ -56,14 +56,21 @@ export default function SavedProductsScreen() {
             sellerName: String(data.sellerName ?? data.s ?? ""),
             city: String(data.city ?? "")
           } as SavedProduct;
+          return { type: "ok" as const, product };
         } catch {
-          return null;
+          // Keep the saved ID if a transient network/rules error prevents a read.
+          return { type: "failed" as const, id };
         }
       }));
-      const available = snapshots.filter((item): item is SavedProduct => item !== null);
-      setProducts(available);
+      const available = snapshots.flatMap((item) => item.type === "ok" ? [item.product] : []);
       const availableIds = available.map((item) => item.id);
-      if (availableIds.length !== ids.length) {
+      const failedIds = snapshots.filter((item) => item.type === "failed").map((item) => item.id);
+      setProducts(available);
+      if (failedIds.length > 0) {
+        const retainedIds = ids.filter((id) => availableIds.includes(id) || failedIds.includes(id));
+        await writeSavedProductIds(retainedIds);
+        setError("Some saved item details could not be refreshed. Your saved items were kept; pull down to retry.");
+      } else if (availableIds.length !== ids.length) {
         await writeSavedProductIds(availableIds);
         setError("Unavailable or no-longer-approved listings were removed from your saved items.");
       }
