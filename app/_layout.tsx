@@ -16,6 +16,11 @@ export default function RootLayout() {
         <Stack.Screen name="index" options={{ title: "ZimMarket", headerShown: false }} />
         <Stack.Screen name="login" options={{ title: "Your account" }} />
         <Stack.Screen name="sell" options={{ title: "Sell on ZimMarket" }} />
+        <Stack.Screen name="cart" options={{ title: "Shopping cart" }} />
+        <Stack.Screen name="account" options={{ title: "Your account" }} />
+        <Stack.Screen name="my-listings" options={{ title: "My listings" }} />
+        <Stack.Screen name="admin" options={{ title: "Admin review" }} />
+        <Stack.Screen name="product/[id]" options={{ title: "Product details" }} />
       </Stack>
     </>
   );
