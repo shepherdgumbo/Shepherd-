@@ -75,7 +75,7 @@ jobs:
           modules.forEach((module, moduleIndex) => {
             (module.projects || []).forEach((project, projectIndex) => {
               const publication = project.publication;
-              if (publication && (!publication.version || !publication.id || !publication.group || !publication.repository)) {
+              if (publication && (!publication.version || !publication.groupId || !publication.artifactId || !publication.repository)) {
                 incomplete = true;
                 console.log("INCOMPLETE_PUBLICATION", JSON.stringify({
                   moduleIndex,
