@@ -5,7 +5,7 @@ import { onAuthStateChanged, signOut, User } from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore";
 import { auth, db, firebaseConfigured } from "../src/firebase";
 
-type Profile = { name?: string; email?: string; role?: string };
+type Profile = { name?: string; email?: string; role?: string; sellerStatus?: string };
 
 export default function AccountScreen() {
   const router = useRouter();
