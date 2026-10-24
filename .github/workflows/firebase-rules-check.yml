@@ -7,6 +7,7 @@ on:
       - "firestore.rules"
       - "storage.rules"
       - "firebase.json"
+      - "scripts/test-firebase-rules.mjs"
       - ".github/workflows/firebase-rules-check.yml"
   pull_request:
     branches: [main]
@@ -43,5 +44,8 @@ jobs:
           distribution: temurin
           java-version: "21"
 
-      - name: Parse Firestore and Storage rules in local emulators
-        run: npx --yes firebase-tools@latest emulators:exec --only firestore,storage --project demo-zimmarket "echo rule-emulator-started"
+      - name: Install isolated Firebase rules test runner
+        run: npm install --no-save --package-lock=false @firebase/rules-unit-testing@6.0.0
+
+      - name: Test Firebase authorization behavior in emulators
+        run: npx --yes firebase-tools@latest emulators:exec --only firestore,storage --project demo-zimmarket "node scripts/test-firebase-rules.mjs"
