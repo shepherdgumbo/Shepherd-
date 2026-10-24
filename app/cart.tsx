@@ -1,14 +1,15 @@
 import { useCallback, useEffect, useState } from "react";
-import { ActivityIndicator, Alert, Pressable, SafeAreaView, ScrollView, Share, StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, Alert, Pressable, SafeAreaView, ScrollView, Share, StyleSheet, Text, TextInput, View } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useRouter } from "expo-router";
-import { doc, getDoc } from "firebase/firestore";
-import { db, firebaseConfigured } from "../src/firebase";
+import { collection, doc, getDoc, onAuthStateChanged, serverTimestamp, writeBatch } from "firebase/firestore";
+import { auth, db, firebaseConfigured } from "../src/firebase";
 
 const CART_KEY = "zimmarket_cart_v1";
 type CartEntry = { productId: string; quantity: number };
 type CartItem = {
   productId: string;
+  sellerId: string;
   quantity: number;
   title: string;
   description: string;
@@ -28,6 +29,11 @@ export default function CartScreen() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [paymentPreference, setPaymentPreference] = useState(paymentOptions[0]);
+  const [buyerName, setBuyerName] = useState("");
+  const [buyerPhone, setBuyerPhone] = useState("");
+  const [deliveryArea, setDeliveryArea] = useState("");
+  const [deliveryNote, setDeliveryNote] = useState("");
+  const [buyerConsent, setBuyerConsent] = useState(false);
   const [busy, setBusy] = useState(false);
 
   const loadCart = useCallback(async () => {
@@ -43,28 +49,25 @@ export default function CartScreen() {
         return;
       }
       const liveItems = await Promise.all(entries.map(async (entry) => {
-        try {
-          const snapshot = await getDoc(doc(db, "products", entry.productId));
-          if (!snapshot.exists()) return null;
-          const data = snapshot.data();
-          if (data.status !== "approved") return null;
-          const rawPrice = data.price ?? data.p;
-          const price = Number(rawPrice);
-          return {
-            productId: entry.productId,
-            quantity: Math.min(Math.max(Math.trunc(Number(entry.quantity) || 1), 1), 99),
-            title: String(data.title ?? data.n ?? data.name ?? "Untitled listing"),
-            description: String(data.description ?? data.d ?? ""),
-            price: Number.isFinite(price) && price >= 0 ? price : 0,
-            currency: String(data.currency ?? data.currencyCode ?? "USD"),
-            category: String(data.category ?? data.c ?? ""),
-            sellerName: String(data.sellerName ?? data.s ?? ""),
-            city: String(data.city ?? ""),
-            imageUrl: String(data.imageUrl ?? data.imageURL ?? data.image ?? data.i ?? "")
-          } as CartItem;
-        } catch {
-          return null;
-        }
+        const snapshot = await getDoc(doc(db, "products", entry.productId));
+        if (!snapshot.exists()) return null;
+        const data = snapshot.data();
+        if (data.status !== "approved") return null;
+        const rawPrice = data.price ?? data.p;
+        const price = Number(rawPrice);
+        return {
+          productId: entry.productId,
+          sellerId: String(data.sellerId ?? ""),
+          quantity: Math.min(Math.max(Math.trunc(Number(entry.quantity) || 1), 1), 99),
+          title: String(data.title ?? data.n ?? data.name ?? "Untitled listing"),
+          description: String(data.description ?? data.d ?? ""),
+          price: Number.isFinite(price) && price >= 0 ? price : 0,
+          currency: String(data.currency ?? data.currencyCode ?? "USD"),
+          category: String(data.category ?? data.c ?? ""),
+          sellerName: String(data.sellerName ?? data.s ?? ""),
+          city: String(data.city ?? ""),
+          imageUrl: String(data.imageUrl ?? data.imageURL ?? data.image ?? data.i ?? "")
+        } as CartItem;
       }));
       const clean = liveItems.filter((item): item is CartItem => item !== null);
       setItems(clean);
@@ -79,6 +82,23 @@ export default function CartScreen() {
   }, []);
 
   useEffect(() => { void loadCart(); }, [loadCart]);
+
+  useEffect(() => onAuthStateChanged(auth, async (user) => {
+    if (!user) {
+      setBuyerName("");
+      return;
+    }
+    setBuyerName((current) => current || user.displayName || "");
+    try {
+      const profile = await getDoc(doc(db, "users", user.uid));
+      if (profile.exists()) {
+        const name = String(profile.data().name || user.displayName || "");
+        setBuyerName((current) => current || name);
+      }
+    } catch {
+      // The buyer may still enter their name manually if profile lookup fails.
+    }
+  }), []);
 
   async function saveItems(next: CartItem[]) {
     setItems(next);
@@ -110,6 +130,83 @@ export default function CartScreen() {
     const totals: Record<string, number> = {};
     for (const item of items) totals[item.currency] = (totals[item.currency] || 0) + item.price * item.quantity;
     return Object.entries(totals).map(([currency, total]) => `${currency} ${total.toFixed(2)}`).join(" + ");
+  }
+
+  async function placeOrderRequests() {
+    const user = auth.currentUser;
+    if (!user) {
+      Alert.alert("Sign in required", "Sign in or create an account before submitting an order request.", [
+        { text: "Cancel", style: "cancel" },
+        { text: "Sign in", onPress: () => router.push("/login") }
+      ]);
+      return;
+    }
+    if (!firebaseConfigured) {
+      Alert.alert("Setup required", "The marketplace backend is not configured. No order has been submitted.");
+      return;
+    }
+    if (!items.length) return;
+    if (!buyerName.trim() || !buyerPhone.trim() || !deliveryArea.trim()) {
+      Alert.alert("Delivery details needed", "Enter your name, phone number, and city or area so the seller can respond.");
+      return;
+    }
+    if (!buyerConsent) {
+      Alert.alert("Please confirm", "Confirm that your contact details may be shared with the sellers in these orders.");
+      return;
+    }
+    if (items.some((item) => !item.sellerId)) {
+      Alert.alert("Seller information missing", "At least one listing has no linked seller account. Remove that item and contact the seller directly.");
+      return;
+    }
+    if (items.length > 100) {
+      Alert.alert("Cart is too large", "Submit no more than 100 different products in one request.");
+      return;
+    }
+
+    setBusy(true);
+    try {
+      const batch = writeBatch(db);
+      for (const item of items) {
+        const orderRef = doc(collection(db, "orders"));
+        batch.set(orderRef, {
+          buyerId: user.uid,
+          buyerEmail: user.email || "",
+          buyerName: buyerName.trim(),
+          buyerPhone: buyerPhone.trim(),
+          deliveryArea: deliveryArea.trim(),
+          deliveryNote: deliveryNote.trim(),
+          buyerConsent: true,
+          sellerId: item.sellerId,
+          productId: item.productId,
+          productTitle: item.title,
+          productImageUrl: item.imageUrl,
+          quantity: item.quantity,
+          unitPrice: item.price,
+          total: Number((item.price * item.quantity).toFixed(2)),
+          currency: item.currency,
+          paymentPreference,
+          paymentStatus: "unpaid",
+          status: "pending",
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp()
+        });
+      }
+      await batch.commit();
+      await AsyncStorage.removeItem(CART_KEY);
+      setItems([]);
+      Alert.alert(
+        "Order request submitted",
+        "Your request has been saved. The seller must confirm availability and delivery. No payment has been collected.",
+        [{ text: "View requests", onPress: () => router.push("/orders") }, { text: "Done", style: "cancel" }]
+      );
+    } catch {
+      Alert.alert(
+        "Order not submitted",
+        "The database rejected this request. No order was created by this attempt and no payment was collected. Ask the project administrator to review the Firestore orders rules, or contact the seller directly."
+      );
+    } finally {
+      setBusy(false);
+    }
   }
 
   async function shareEnquiry() {
@@ -174,8 +271,18 @@ export default function CartScreen() {
               <Text style={styles.total}>{totalsByCurrency()}</Text>
               <Text style={styles.small}>Different currencies are shown separately. Delivery and seller-negotiated prices are not included.</Text>
             </View>
+            <Text style={styles.section}>Contact and delivery details</Text>
+            <Text style={styles.body}>Share only the details needed for the seller to respond and arrange delivery.</Text>
+            <TextInput accessibilityLabel="Your name" style={styles.input} placeholder="Your name" value={buyerName} onChangeText={setBuyerName} maxLength={100} />
+            <TextInput accessibilityLabel="Phone number" style={styles.input} placeholder="Phone number (e.g. +263 77 123 4567)" value={buyerPhone} onChangeText={setBuyerPhone} keyboardType="phone-pad" maxLength={25} />
+            <TextInput accessibilityLabel="City or area" style={styles.input} placeholder="City / area (e.g. Harare)" value={deliveryArea} onChangeText={setDeliveryArea} maxLength={100} />
+            <TextInput accessibilityLabel="Delivery note" style={[styles.input, styles.noteInput]} placeholder="Delivery note (optional, no PINs or passwords)" value={deliveryNote} onChangeText={setDeliveryNote} multiline maxLength={400} />
+            <Pressable accessibilityRole="button" accessibilityState={{ checked: buyerConsent }} onPress={() => setBuyerConsent((value) => !value)} style={styles.consentRow}>
+              <View style={[styles.consentBox, buyerConsent && styles.consentBoxChecked]}><Text style={styles.consentTick}>{buyerConsent ? "✓" : ""}</Text></View>
+              <Text style={styles.consentText}>I agree to share my name, phone, email and delivery area with each seller in these order requests.</Text>
+            </Pressable>
             <Text style={styles.section}>Preferred payment arrangement</Text>
-            <Text style={styles.body}>Choose what you would prefer to discuss with the seller. This does not initiate a payment.</Text>
+            <Text style={styles.body}>This records your preference only. EcoCash, OneMoney and bank transfers are not processed by ZimMarket.</Text>
             <View style={styles.options}>
               {paymentOptions.map((option) => (
                 <Pressable key={option} accessibilityRole="button" accessibilityState={{ selected: paymentPreference === option }} onPress={() => setPaymentPreference(option)} style={[styles.option, paymentPreference === option && styles.optionSelected]}>
@@ -183,7 +290,8 @@ export default function CartScreen() {
                 </Pressable>
               ))}
             </View>
-            <Pressable accessibilityRole="button" disabled={busy} style={[styles.primary, busy && styles.disabled]} onPress={() => void shareEnquiry()}><Text style={styles.primaryText}>{busy ? "Opening sharing…" : "Share purchase enquiry"}</Text></Pressable>
+            <Pressable accessibilityRole="button" disabled={busy} style={[styles.primary, busy && styles.disabled]} onPress={() => void placeOrderRequests()}><Text style={styles.primaryText}>{busy ? "Submitting…" : "Submit order requests"}</Text></Pressable>
+            <Pressable accessibilityRole="button" disabled={busy} style={[styles.secondary, busy && styles.disabled]} onPress={() => void shareEnquiry()}><Text style={styles.secondaryText}>Share enquiry instead</Text></Pressable>
             <Pressable accessibilityRole="button" style={styles.clear} onPress={() => Alert.alert("Clear cart?", "Remove all items from your saved cart?", [{ text: "Cancel", style: "cancel" }, { text: "Clear cart", style: "destructive", onPress: () => void saveItems([]) }])}><Text style={styles.remove}>Clear cart</Text></Pressable>
             <View style={styles.warning}><Text style={styles.warningText}>Safety reminder: verify the seller and product before paying. Never share your PIN, password or one-time code. ZimMarket has not processed an order or payment at this stage.</Text></View>
           </>
@@ -205,6 +313,13 @@ const styles = StyleSheet.create({
   itemTitle: { color: "#0B1F3A", fontWeight: "900", fontSize: 16 },
   meta: { color: "#69788B", fontSize: 12, marginTop: 6 },
   price: { color: "#1769E0", fontWeight: "900", fontSize: 15, marginTop: 10 },
+  input: { backgroundColor: "#FFFFFF", borderWidth: 1, borderColor: "#DCE5F0", borderRadius: 12, padding: 13, color: "#0B1F3A", marginTop: 10 },
+  noteInput: { minHeight: 75, textAlignVertical: "top" },
+  consentRow: { flexDirection: "row", gap: 10, alignItems: "flex-start", marginTop: 14 },
+  consentBox: { width: 23, height: 23, borderRadius: 6, borderWidth: 1, borderColor: "#9BB2CE", backgroundColor: "#FFFFFF", alignItems: "center", justifyContent: "center" },
+  consentBoxChecked: { backgroundColor: "#1769E0", borderColor: "#1769E0" },
+  consentTick: { color: "#FFFFFF", fontWeight: "900" },
+  consentText: { color: "#526277", fontSize: 12, lineHeight: 18, flex: 1 },
   quantityRow: { flexDirection: "row", gap: 10, alignItems: "center", marginTop: 13 },
   qtyButton: { width: 34, height: 34, borderRadius: 10, borderWidth: 1, borderColor: "#D7E0EC", alignItems: "center", justifyContent: "center", backgroundColor: "#F8FAFD" },
   qtyText: { color: "#0B1F3A", fontWeight: "900", fontSize: 18 },
@@ -224,6 +339,8 @@ const styles = StyleSheet.create({
   optionTextSelected: { color: "#1769E0", fontWeight: "900" },
   primary: { backgroundColor: "#1769E0", borderRadius: 12, padding: 15, marginTop: 18, alignItems: "center" },
   primaryText: { color: "#FFFFFF", fontWeight: "900" },
+  secondary: { backgroundColor: "#EAF2FF", borderRadius: 12, padding: 14, marginTop: 9, alignItems: "center" },
+  secondaryText: { color: "#1769E0", fontWeight: "900" },
   disabled: { opacity: 0.5 },
   clear: { alignSelf: "center", padding: 14 },
   empty: { backgroundColor: "#FFFFFF", borderRadius: 16, padding: 20, marginTop: 12 },
