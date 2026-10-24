@@ -71,3 +71,9 @@ An EAS internal preview profile is configured in `eas.json` to produce an APK; t
 - A successful EAS Android build, installation test, and production deployment still need to be completed.
 
 The application must not be advertised as fully launched until the remaining backend/security and device-build checks pass.
+
+## Producing an installable APK
+
+The workflow `.github/workflows/build-android-preview.yml` is configured to create an Expo EAS preview APK whenever app files change. It requires a GitHub repository Actions secret named `EXPO_TOKEN` with an Expo access token. The first run stopped because that secret is not present, so **no APK has been created yet**.
+
+Add the secret in GitHub: **Settings → Secrets and variables → Actions → New repository secret**. Use the name `EXPO_TOKEN` and paste an Expo access token as the value. Do not put the token in source code or commit it. Then open **Actions → Build ZimMarket Android preview** and rerun the workflow.
