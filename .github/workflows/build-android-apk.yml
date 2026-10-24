@@ -7,6 +7,7 @@ on:
       - "app/**"
       - "src/**"
       - "package.json"
+      - "package-lock.json"
       - "app.json"
       - "tsconfig.json"
       - "firebase/**"
@@ -54,8 +55,8 @@ jobs:
           yes | "$SDKMANAGER" --licenses >/dev/null || true
           "$SDKMANAGER" --install "platform-tools" "platforms;android-36" "build-tools;36.0.0"
 
-      - name: Install JavaScript dependencies
-        run: npm install
+      - name: Install exact locked dependencies
+        run: npm ci
 
       - name: Check TypeScript
         run: npm run typecheck
