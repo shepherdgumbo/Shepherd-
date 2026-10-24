@@ -1,0 +1,54 @@
+name: Deploy ZimMarket web to Firebase Hosting
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirm_production_deploy:
+        description: Type DEPLOY to replace the current Firebase Hosting website with the checked Expo marketplace.
+        required: true
+        type: string
+        default: "NO"
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    if: ${{ inputs.confirm_production_deploy == 'DEPLOY' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Require Firebase deployment credentials
+        shell: bash
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_ZIMMARKET_D4B35 }}
+        run: |
+          if [ -z "$FIREBASE_SERVICE_ACCOUNT" ]; then
+            echo "::error::Missing Actions secret FIREBASE_SERVICE_ACCOUNT_ZIMMARKET_D4B35. The current live site has not been changed. Add a Firebase service-account JSON secret, then run again."
+            exit 1
+          fi
+
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Check TypeScript
+        run: npm run typecheck
+
+      - name: Build static Expo web app
+        run: npx expo export --platform web
+
+      - name: Deploy web app to Firebase Hosting production
+        uses: FirebaseExtended/action-hosting-deploy@v0
+        with:
+          repoToken: ${{ secrets.GITHUB_TOKEN }}
+          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_ZIMMARKET_D4B35 }}
+          projectId: zimmarket-d4b35
+          channelId: live
