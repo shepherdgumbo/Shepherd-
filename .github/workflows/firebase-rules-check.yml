@@ -1,0 +1,41 @@
+name: Validate ZimMarket Firebase rules
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "firestore.rules"
+      - "storage.rules"
+      - "firebase.json"
+      - ".github/workflows/firebase-rules-check.yml"
+  pull_request:
+    branches: [main]
+    paths:
+      - "firestore.rules"
+      - "storage.rules"
+      - "firebase.json"
+      - ".github/workflows/firebase-rules-check.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: zimmarket-firebase-rules-check-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  rules-compile:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out rule sources
+        uses: actions/checkout@v7
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: 24
+
+      - name: Parse Firestore and Storage rules in local emulators
+        run: npx --yes firebase-tools@latest emulators:exec --only firestore,storage --project demo-zimmarket "node -e 'console.log("Firebase rules emulator startup passed.")'"
