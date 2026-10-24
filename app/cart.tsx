@@ -158,8 +158,8 @@ export default function CartScreen() {
       Alert.alert("Seller information missing", "At least one listing has no linked seller account. Remove that item and contact the seller directly.");
       return;
     }
-    if (items.length > 100) {
-      Alert.alert("Cart is too large", "Submit no more than 100 different products in one request.");
+    if (items.length > 10) {
+      Alert.alert("Cart is too large", "Submit no more than 10 different products in one order batch.");
       return;
     }
 
@@ -177,6 +177,8 @@ export default function CartScreen() {
           deliveryNote: deliveryNote.trim(),
           buyerConsent: true,
           sellerId: item.sellerId,
+          sellerName: item.sellerName,
+          sellerCity: item.city,
           productId: item.productId,
           productTitle: item.title,
           productImageUrl: item.imageUrl,
