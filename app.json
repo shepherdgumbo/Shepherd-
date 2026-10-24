@@ -7,14 +7,27 @@
     "orientation": "portrait",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
-    "plugins": ["expo-router"],
-    "experiments": { "typedRoutes": true },
+    "plugins": [
+      "expo-router",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Allow ZimMarket to select photos for product listings.",
+          "cameraPermission": "Allow ZimMarket to take product photos."
+        }
+      ]
+    ],
+    "experiments": {
+      "typedRoutes": true
+    },
     "android": {
       "package": "zw.zimmarket.app",
       "adaptiveIcon": {
         "backgroundColor": "#0B1F3A"
       }
     },
-    "web": { "bundler": "metro" }
+    "web": {
+      "bundler": "metro"
+    }
   }
 }
