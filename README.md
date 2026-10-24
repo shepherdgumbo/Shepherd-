@@ -10,9 +10,11 @@ ZimMarket is a Zimbabwe-focused marketplace. This repository contains the Expo /
 - Product detail page with legacy field compatibility for older product documents.
 - Firebase email/password sign-in and registration, including password reset.
 - Customer and seller account roles.
-- Seller product submission with USD/ZWL pricing and pending review status.
+- Seller application queue: new seller accounts start pending and must be approved by an administrator before listing products.
+- Seller product submission with USD/ZWL pricing, seller/business name, city/area, optional photo upload and pending product review.
 - Optional product-photo selection and Firebase Storage upload.
 - Seller “My listings” view showing review status.
+- Persistent local cart with live price refresh and a shareable purchase enquiry (not a payment or confirmed order).
 - Admin review screen to approve or reject pending listings.
 - Loading, empty, offline/error states, and basic shop-safety guidance.
 - Expo EAS preview and production build profiles.
@@ -60,7 +62,7 @@ npx expo export --platform android
 
 ## Android build
 
-An EAS internal preview profile is configured in `eas.json` to produce an APK; the production profile creates an Android App Bundle. An actual APK has not been produced or installed on a device yet.
+An Android debug APK workflow is configured at `.github/workflows/build-android-apk.yml`. It builds the native Android project and uploads `app-debug.apk` as a GitHub Actions artifact without needing an Expo token. The EAS preview and production profiles are also configured in `eas.json`; the EAS workflow is manual-only and requires the `EXPO_TOKEN` GitHub secret. A successful APK artifact and a real-device install still need verification.
 
 ## Not yet production-verified
 
@@ -74,6 +76,6 @@ The application must not be advertised as fully launched until the remaining bac
 
 ## Producing an installable APK
 
-The workflow `.github/workflows/build-android-preview.yml` is configured to create an Expo EAS preview APK whenever app files change. It requires a GitHub repository Actions secret named `EXPO_TOKEN` with an Expo access token. The first run stopped because that secret is not present, so **no APK has been created yet**.
+The recommended no-token preview build is `.github/workflows/build-android-apk.yml`. Open **Actions → Build ZimMarket Android APK** and run it, or push a change to an app file. When successful, download the `zimmarket-android-debug-apk` artifact from that workflow run and install it on an Android test device.
 
-Add the secret in GitHub: **Settings → Secrets and variables → Actions → New repository secret**. Use the name `EXPO_TOKEN` and paste an Expo access token as the value. Do not put the token in source code or commit it. Then open **Actions → Build ZimMarket Android preview** and rerun the workflow.
+For cloud-managed EAS builds, `.github/workflows/build-android-preview.yml` is manual-only and requires the repository Actions secret `EXPO_TOKEN`. Add it under **Settings → Secrets and variables → Actions → New repository secret**. Never commit the token into source code.
