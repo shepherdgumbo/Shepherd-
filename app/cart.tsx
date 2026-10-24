@@ -184,7 +184,7 @@ export default function CartScreen() {
           productImageUrl: item.imageUrl,
           quantity: item.quantity,
           unitPrice: item.price,
-          total: Number((item.price * item.quantity).toFixed(2)),
+          total: item.price * item.quantity,
           currency: item.currency,
           paymentPreference,
           paymentStatus: "unpaid",
