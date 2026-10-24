@@ -63,32 +63,6 @@ jobs:
       - name: Generate native Android project
         run: npx expo prebuild --platform android --no-install
 
-      - name: Diagnose Expo native module metadata
-        shell: bash
-        run: |
-          npx expo-modules-autolinking resolve --platform android --json > /tmp/expo-modules.json
-          node <<'NODE'
-          const result = require("/tmp/expo-modules.json");
-          const modules = result.modules || [];
-          console.log("Resolved Expo Android modules:", modules.length);
-          let incomplete = false;
-          modules.forEach((module, moduleIndex) => {
-            (module.projects || []).forEach((project, projectIndex) => {
-              const publication = project.publication;
-              if (publication && (!publication.version || !publication.groupId || !publication.artifactId || !publication.repository)) {
-                incomplete = true;
-                console.log("INCOMPLETE_PUBLICATION", JSON.stringify({
-                  moduleIndex,
-                  module: module.packageName,
-                  projectIndex,
-                  project,
-                }));
-              }
-            });
-          });
-          if (!incomplete) console.log("All declared Android publications include required fields.");
-          NODE
-
       - name: Build installable debug APK
         working-directory: android
         run: ./gradlew --no-daemon assembleDebug
