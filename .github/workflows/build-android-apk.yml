@@ -42,7 +42,17 @@ jobs:
           java-version: "17"
 
       - name: Set up Android SDK
-        uses: android-actions/setup-android@v3
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "Android SDK root: ${ANDROID_HOME}"
+          SDKMANAGER="$(find "${ANDROID_HOME}/cmdline-tools" -maxdepth 3 -type f -name sdkmanager | head -n 1)"
+          if [ -z "$SDKMANAGER" ]; then
+            echo "::error::Android SDK sdkmanager was not found on the runner."
+            exit 1
+          fi
+          yes | "$SDKMANAGER" --licenses >/dev/null || true
+          "$SDKMANAGER" --install "platform-tools" "platforms;android-36" "build-tools;36.0.0"
 
       - name: Install JavaScript dependencies
         run: npm install
