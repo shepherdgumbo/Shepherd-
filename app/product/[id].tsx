@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import { addProductToCart } from "../../src/cart";
 import { ActivityIndicator, Alert, Image, Linking, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { doc, getDoc } from "firebase/firestore";
@@ -121,16 +121,15 @@ export default function ProductDetailsScreen() {
   async function addToCart() {
     if (!id || !product) return;
     try {
-      const raw = await AsyncStorage.getItem("zimmarket_cart_v1");
-      const entries = raw ? JSON.parse(raw) as { productId: string; quantity: number }[] : [];
-      const existing = entries.find((entry) => entry.productId === id);
-      if (existing) existing.quantity = Math.min(existing.quantity + 1, 99);
-      else entries.push({ productId: id, quantity: 1 });
-      await AsyncStorage.setItem("zimmarket_cart_v1", JSON.stringify(entries));
-      Alert.alert("Added to cart", "This item has been saved to your cart.", [
-        { text: "Keep browsing", style: "cancel" },
-        { text: "View cart", onPress: () => router.push("/cart") }
-      ]);
+      const count = await addProductToCart(id);
+      Alert.alert(
+        "Added to cart",
+        `This item has been saved to your cart. Your cart now has ${count} item${count === 1 ? "" : "s"}.`,
+        [
+          { text: "Keep browsing", style: "cancel" },
+          { text: "View cart", onPress: () => router.push("/cart") }
+        ]
+      );
     } catch {
       Alert.alert("Could not update cart", "Please try again.");
     }
