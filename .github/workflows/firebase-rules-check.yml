@@ -44,4 +44,4 @@ jobs:
           java-version: "21"
 
       - name: Parse Firestore and Storage rules in local emulators
-        run: npx --yes firebase-tools@latest emulators:exec --only firestore,storage --project demo-zimmarket "node -e process.exit(0)"
+        run: npx --yes firebase-tools@latest emulators:exec --only firestore,storage --project demo-zimmarket "echo rule-emulator-started"
