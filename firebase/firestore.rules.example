@@ -64,7 +64,7 @@ service cloud.firestore {
         && request.resource.data.price >= 0
         && request.resource.data.currency in ['USD', 'ZWL']
         && request.resource.data.keys().hasOnly([
-          'title', 'description', 'price', 'currency', 'category',
+          'title', 'description', 'price', 'currency', 'category', 'sellerName', 'city',
           'imageUrl', 'sellerId', 'status', 'createdAt', 'updatedAt'
         ]);
 
@@ -75,7 +75,7 @@ service cloud.firestore {
           && request.resource.data.sellerId == resource.data.sellerId
           && request.resource.data.status == resource.data.status
           && request.resource.data.diff(resource.data).affectedKeys()
-            .hasOnly(['title', 'description', 'price', 'currency', 'category', 'imageUrl', 'updatedAt']));
+            .hasOnly(['title', 'description', 'price', 'currency', 'category', 'sellerName', 'city', 'imageUrl', 'updatedAt']));
 
       allow delete: if isAdmin()
         || (isSeller()
