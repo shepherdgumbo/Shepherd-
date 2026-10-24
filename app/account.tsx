@@ -55,6 +55,7 @@ export default function AccountScreen() {
             <Text style={styles.cardTitle}>{profile?.name || user.displayName || "ZimMarket member"}</Text>
             <Text style={styles.body}>{user.email || "Email not available"}</Text>
             <View style={styles.rolePill}><Text style={styles.roleText}>{profile?.role ? profile.role.toUpperCase() : "ACCOUNT"}</Text></View>
+            <Pressable accessibilityRole="button" style={styles.secondary} onPress={() => router.push("/orders")}><Text style={styles.secondaryText}>My order requests</Text></Pressable>
             {profile?.role === "seller" && <Text style={styles.sellerStatus}>
               {profile.sellerStatus === "approved" ? "Seller status: approved" : profile.sellerStatus === "rejected" ? "Seller status: not approved. Contact support if you think this is a mistake." : "Seller status: waiting for administrator approval. Product publishing is unavailable until approved."}
             </Text>}
