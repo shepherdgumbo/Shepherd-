@@ -41,14 +41,21 @@ The Expo app writes product documents with explicit fields and `status: "pending
 
 The existing website uses older product field names such as `n`, `p`, `c`, `i`, and `d`; the Expo screens can map those fields for already-approved records. Legacy documents without an explicit approved status are intentionally not shown. They must be reviewed before anyone sets them to approved.
 
-## Security rules templates — not deployed
+## Firebase security rules and production safeguards
 
-- `firebase/firestore.rules.example`
-- `firebase/storage.rules.example`
+The canonical marketplace rules are now in the repository root:
 
-These are review templates only. No Firebase rules have been changed or deployed by this repository. The order request, seller approval, and product approval features will be rejected by Firebase until the corresponding rules are carefully reconciled with the current production rules. **Do not paste these templates over production rules without reviewing the current rules first.** The currently deployed web page has legacy product-query/demo-fallback behavior that must be updated to respect `status == "approved"` before applying rules that deny unfiltered public product queries. A rules change without that frontend fix could break the old website.
+- `firestore.rules` — restricts profiles, seller applications, product moderation, and buyer/seller order-request access.
+- `storage.rules` — permits public reads of product images and limits uploads to approved sellers' image folders.
+- `firebase.json` points to these rule files.
+- `.github/workflows/firebase-rules-check.yml` starts the Firestore and Storage emulators to check the rule configuration.
+- `.github/workflows/deploy-firebase-security-rules.yml` is manual-only, requires the exact confirmation `DEPLOY`, and uses a separate repository secret named `FIREBASE_RULES_SERVICE_ACCOUNT_ZIMMARKET_D4B35`.
 
-Administrator access is granted by the trusted project owner, not by a public sign-up option. To use the review screen, a trusted administrator account must have `role: "admin"` in its user profile, and production rules must enforce admin-only changes server-side.
+**These files are not yet deployed to the live Firebase project.** Firebase rules deployment replaces the corresponding rules currently in the console. Before deployment, compare the current production rules with `firestore.rules` and `storage.rules`, including any legacy collections or fields in use. The currently deployed older website must also be updated to query only `status == "approved"` before restrictive product-read rules are activated; otherwise its product browsing could break. Hosting deployments do not deploy these security rules.
+
+The service-account secret must contain valid JSON for project `zimmarket-d4b35` and have permission to deploy Firestore and Storage rules. Store it only as a GitHub Actions secret, never in the repository. A missing secret or absent permissions must stop deployment.
+
+Administrator access is granted by the trusted project owner, not public sign-up. After a trusted administrator registers, the project owner must set `role: "admin"` on that user's Firestore profile through the Firebase Console. Regular users cannot elevate themselves through the app.
 
 ## Run locally
 
@@ -66,7 +73,7 @@ npx expo export --platform android
 
 ## Android build
 
-An Android debug APK workflow is configured at `.github/workflows/build-android-apk.yml`. It builds the native Android project and uploads `app-debug.apk` as a GitHub Actions artifact without needing an Expo token. The EAS preview and production profiles are also configured in `eas.json`; the EAS workflow is manual-only and requires the `EXPO_TOKEN` GitHub secret. **A debug APK was successfully built and uploaded on 2026-10-24** (workflow run `40082786586`, commit `7168e906c7abfdae9fe6e07034e7722a9ff6dada`). It has not yet been installed and tested on a physical Android device.
+An Android debug APK workflow is configured at `.github/workflows/build-android-apk.yml`. It builds the native Android project and uploads `app-debug.apk` as a GitHub Actions artifact without needing an Expo token. The EAS preview and production profiles are also configured in `eas.json`; the EAS workflow is manual-only and requires the `EXPO_TOKEN` GitHub secret. **A debug APK was successfully built and uploaded on 2026-10-24** (workflow run `40093565974`, commit `9f9014ee9681edbd725639315639db4acc4c0c8a`). It has not yet been installed and tested on a physical Android device.
 
 ## Amazon-style roadmap and current scope
 
@@ -94,10 +101,10 @@ This source code/configuration does not itself update the old live Firebase webs
 - Order requests are implemented, but they remain unpaid until sellers confirm details. Real payment processing for EcoCash, OneMoney, bank transfer, or cards; shipping integrations; and refunds are not implemented.
 - A signed production Android build, installation test on a physical device, and production deployment still need to be completed.
 
-The application must not be advertised as fully launched until the remaining backend/security and device-build checks pass.
+The application must not be advertised as fully launched until production rules, live login/listing/order tests, payment/delivery operations and a physical-device test pass.
 
 ## Producing an installable APK
 
-The recommended no-token preview build is `.github/workflows/build-android-apk.yml`. The latest successful build is [workflow run 40082786586](https://github.com/shepherdgumbo/Shepherd-/actions/runs/40082786586). Download the `zimmarket-android-debug-apk` artifact from that run; it expires on 2026-11-07. Install it on an Android test device and verify sign-in, approved product browsing, seller application approval, product approval, order requests, and seller responses before inviting real users.
+The recommended no-token preview build is `.github/workflows/build-android-apk.yml`. The latest successful build is [workflow run 40093565974](https://github.com/shepherdgumbo/Shepherd-/actions/runs/40093565974). Download the `zimmarket-android-debug-apk` artifact from that run; it expires on 2026-11-07. Install it on an Android test device and verify sign-in, approved product browsing, seller application approval, product approval, order requests, and seller responses before inviting real users.
 
 For cloud-managed EAS builds, `.github/workflows/build-android-preview.yml` is manual-only and requires the repository Actions secret `EXPO_TOKEN`. Add it under **Settings → Secrets and variables → Actions → New repository secret**. Never commit the token into source code.
