@@ -15,9 +15,18 @@ export default function LoginScreen() {
   const [busy, setBusy] = useState(false);
 
   async function submit() {
-    if (!firebaseConfigured) { Alert.alert("Setup required", "Firebase configuration has not been added yet."); return; }
-    if (!email.trim() || password.length < 6) { Alert.alert("Check details", "Enter a valid email and a password of at least 6 characters."); return; }
-    if (register && !name.trim()) { Alert.alert("Name required", "Enter your name to create an account."); return; }
+    if (!firebaseConfigured) {
+      Alert.alert("Setup required", "Firebase configuration has not been added yet.");
+      return;
+    }
+    if (!email.trim() || password.length < 6) {
+      Alert.alert("Check details", "Enter a valid email and a password of at least 6 characters.");
+      return;
+    }
+    if (register && !name.trim()) {
+      Alert.alert("Name required", "Enter your name to create an account.");
+      return;
+    }
     setBusy(true);
     try {
       if (register) {
@@ -37,7 +46,26 @@ export default function LoginScreen() {
     } catch (error) {
       const message = error instanceof Error ? error.message : "Please try again.";
       Alert.alert("Account problem", message.replace("Firebase: ", ""));
-    } finally { setBusy(false); }
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function resetPassword() {
+    if (!email.trim()) {
+      Alert.alert("Email required", "Enter your email address first.");
+      return;
+    }
+    if (!firebaseConfigured) {
+      Alert.alert("Setup required", "Firebase configuration has not been added yet.");
+      return;
+    }
+    try {
+      await sendPasswordResetEmail(auth, email.trim());
+      Alert.alert("Check your email", "If an account exists for this address, Firebase will send password-reset instructions.");
+    } catch {
+      Alert.alert("Could not send email", "Check the address and Firebase email/password settings, then try again.");
+    }
   }
 
   return (
@@ -53,7 +81,8 @@ export default function LoginScreen() {
           <Pressable onPress={() => setRole("seller")} style={[styles.role, role === "seller" && styles.selected]}><Text style={role === "seller" ? styles.selectedText : styles.roleText}>Seller</Text></Pressable>
         </View>}
         <Pressable disabled={busy} onPress={() => void submit()} style={[styles.button, busy && { opacity: 0.6 }]}><Text style={styles.buttonText}>{busy ? "Please wait…" : register ? "Create account" : "Sign in"}</Text></Pressable>
-        {!register && <Pressable onPress={() => void resetPassword()} style={styles.switch}><Text style={styles.switchText}>Forgot password?</Text></Pressable>}\n        <Pressable onPress={() => setRegister(!register)} style={styles.switch}><Text style={styles.switchText}>{register ? "Already registered? Sign in" : "New to ZimMarket? Create an account"}</Text></Pressable>
+        {!register && <Pressable onPress={() => void resetPassword()} style={styles.switch}><Text style={styles.switchText}>Forgot password?</Text></Pressable>}
+        <Pressable onPress={() => setRegister(!register)} style={styles.switch}><Text style={styles.switchText}>{register ? "Already registered? Sign in" : "New to ZimMarket? Create an account"}</Text></Pressable>
         <Text style={styles.note}>Seller listings remain pending until approved by an administrator. Never share your password or payment PIN.</Text>
       </View>
     </SafeAreaView>
@@ -73,7 +102,7 @@ const styles = StyleSheet.create({
   selectedText: { color: "#FFFFFF", fontWeight: "700" },
   button: { backgroundColor: "#1769E0", padding: 15, borderRadius: 12, alignItems: "center", marginTop: 4 },
   buttonText: { color: "#FFFFFF", fontWeight: "800" },
-  switch: { padding: 14, alignItems: "center" },
+  switch: { padding: 12, alignItems: "center" },
   switchText: { color: "#1769E0", fontWeight: "700", textAlign: "center" },
   note: { color: "#607086", fontSize: 12, lineHeight: 18, marginTop: 8 }
 });
