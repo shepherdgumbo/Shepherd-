@@ -23,7 +23,7 @@ type Product = {
 
 const navy = "#0B1F3A";
 const blue = "#1769E0";
-const categories = ["All", "Phones", "Computers", "Home & Garden", "Fashion", "Vehicles", "Services", "Other"];
+const categories = ["All", "Phones", "Solar", "Fashion", "Furniture", "Electronics", "Groceries", "Computers", "Home & Garden", "Vehicles", "Services", "Accessories", "Appliances", "Other"];
 
 export default function HomeScreen() {
   const router = useRouter();
