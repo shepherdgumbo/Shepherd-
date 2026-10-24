@@ -14,7 +14,9 @@ ZimMarket is a Zimbabwe-focused marketplace. This repository contains the Expo /
 - Seller product submission with USD/ZWL pricing, seller/business name, city/area, optional photo upload and pending product review.
 - Optional product-photo selection and Firebase Storage upload.
 - Seller “My listings” view showing review status.
-- Persistent local cart with live price refresh and a shareable purchase enquiry (not a payment or confirmed order).
+- Persistent local cart with live price refresh, seller contact, shareable enquiries, and saved unpaid order requests.
+- Buyer order tracking and a seller inbox to accept/reject requests and mark accepted requests complete.
+- Buyer contact consent and Firestore rules that restrict order records to their buyer, seller, or administrator.
 - Admin review screen to approve or reject pending listings.
 - Loading, empty, offline/error states, and basic shop-safety guidance.
 - Expo EAS preview and production build profiles.
@@ -42,7 +44,7 @@ The existing website uses older product field names such as `n`, `p`, `c`, `i`, 
 - `firebase/firestore.rules.example`
 - `firebase/storage.rules.example`
 
-These are review templates only. No Firebase rules have been changed or deployed by this repository. **Do not paste them over your production rules without reviewing the current rules first.** The currently deployed web page has legacy product-query/demo-fallback behavior that must be updated to respect `status == "approved"` before applying rules that deny unfiltered public product queries. A rules change without that frontend fix could break the old website.
+These are review templates only. No Firebase rules have been changed or deployed by this repository. The order request, seller approval, and product approval features will be rejected by Firebase until the corresponding rules are carefully reconciled with the current production rules. **Do not paste these templates over production rules without reviewing the current rules first.** The currently deployed web page has legacy product-query/demo-fallback behavior that must be updated to respect `status == "approved"` before applying rules that deny unfiltered public product queries. A rules change without that frontend fix could break the old website.
 
 Administrator access is granted by the trusted project owner, not by a public sign-up option. To use the review screen, a trusted administrator account must have `role: "admin"` in its user profile, and production rules must enforce admin-only changes server-side.
 
@@ -69,7 +71,7 @@ An Android debug APK workflow is configured at `.github/workflows/build-android-
 - Firestore and Storage rules need to be compared against the existing production rules and tested with customer, seller, and administrator accounts.
 - Seller submissions and photo uploads need a live rules-backed test.
 - The existing public website needs a separate update so it does not expose pending listings or display demo fallback products.
-- Orders, payment processing (EcoCash, OneMoney, cash on delivery and bank transfer), shipping, and refunds are not yet implemented.
+- Order requests are implemented, but they remain unpaid until sellers confirm details. Real payment processing for EcoCash, OneMoney, bank transfer, or cards; shipping integrations; and refunds are not implemented.
 - A successful EAS Android build, installation test, and production deployment still need to be completed.
 
 The application must not be advertised as fully launched until the remaining backend/security and device-build checks pass.
