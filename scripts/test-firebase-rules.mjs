@@ -158,6 +158,33 @@ const cases = [
       createdAt: serverTimestamp(), updatedAt: serverTimestamp(),
     }));
   }],
+  ["customers cannot promote their own account to administrator", async () => {
+    const db = env.authenticatedContext("buyer-1", { email: "buyer@example.com" }).firestore();
+    await assertFails(updateDoc(doc(db, "users/buyer-1"), {
+      role: "admin", updatedAt: serverTimestamp(),
+    }));
+  }],
+  ["seller can accept a pending order and complete it only after acceptance", async () => {
+    const db = env.authenticatedContext("seller-1", { email: "seller@example.com" }).firestore();
+    await assertSucceeds(updateDoc(doc(db, "orders/order-1"), {
+      status: "accepted", updatedAt: serverTimestamp(),
+    }));
+    await assertSucceeds(updateDoc(doc(db, "orders/order-1"), {
+      status: "completed", updatedAt: serverTimestamp(),
+    }));
+  }],
+  ["buyer can cancel their own pending order", async () => {
+    const db = env.authenticatedContext("buyer-1", { email: "buyer@example.com" }).firestore();
+    await assertSucceeds(updateDoc(doc(db, "orders/order-1"), {
+      status: "cancelled", updatedAt: serverTimestamp(),
+    }));
+  }],
+  ["seller cannot change an unpaid request to paid", async () => {
+    const db = env.authenticatedContext("seller-1", { email: "seller@example.com" }).firestore();
+    await assertFails(updateDoc(doc(db, "orders/order-1"), {
+      paymentStatus: "paid", updatedAt: serverTimestamp(),
+    }));
+  }],
   ["buyers can create a valid unpaid order request", async () => {
     const db = env.authenticatedContext("buyer-1", { email: "buyer@example.com" }).firestore();
     await assertSucceeds(setDoc(doc(db, "orders/valid-order"), {
