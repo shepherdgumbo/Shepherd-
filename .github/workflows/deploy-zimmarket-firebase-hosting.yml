@@ -8,6 +8,8 @@ on:
       - "app/**"
       - "src/**"
       - "public/**"
+      - "package.json"
+      - "package-lock.json"
       - "firebase.json"
       - ".firebaserc"
       - ".github/workflows/deploy-zimmarket-firebase-hosting.yml"
@@ -57,8 +59,8 @@ jobs:
         with:
           node-version: 22
 
-      - name: Install dependencies
-        run: npm install
+      - name: Install exact locked dependencies
+        run: npm ci
 
       - name: Check TypeScript
         run: npm run typecheck
