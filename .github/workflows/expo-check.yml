@@ -23,3 +23,5 @@ jobs:
         run: npm run typecheck
       - name: Bundle Android JavaScript
         run: npx expo export --platform android
+      - name: Export web build for Firebase Hosting compatibility
+        run: npx expo export --platform web
