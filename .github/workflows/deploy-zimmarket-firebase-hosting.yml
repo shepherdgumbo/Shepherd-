@@ -11,6 +11,8 @@ on:
       - "package.json"
       - "package-lock.json"
       - "firebase.json"
+      - "firestore.rules"
+      - "storage.rules"
       - ".firebaserc"
       - ".github/workflows/deploy-zimmarket-firebase-hosting.yml"
   workflow_dispatch:
