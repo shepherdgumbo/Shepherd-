@@ -1,32 +1,48 @@
-# ZimMarket — Expo mobile app
+# ZimMarket Expo app
 
-ZimMarket is a marketplace for Zimbabwe. This repository contains an Expo / React Native mobile app intended to use the existing Firebase project `zimmarket-d4b35`.
+ZimMarket is a Zimbabwe-focused marketplace. This repository contains the Expo / React Native application configured to use the existing Firebase project `zimmarket-d4b35`.
 
-## Current scope
+## Implemented in this repository
 
-- Expo Router app shell and mobile-first marketplace screen.
-- Firebase client configured through Expo public environment variables.
-- Email/password sign-in and account registration.
-- Approved-only product browsing (`products.status == "approved"`).
-- Seller listing submission with `status: "pending"`.
-- USD and ZWL price entry.
-- Empty, loading, and error states rather than fabricated product data.
+- Expo Router mobile app and branded marketplace home.
+- Live Firestore product browsing with search and category filtering.
+- **Approved-only** public listings; no seeded demo products or fabricated reviews.
+- Product detail page with legacy field compatibility for older product documents.
+- Firebase email/password sign-in and registration, including password reset.
+- Customer and seller account roles.
+- Seller product submission with USD/ZWL pricing and pending review status.
+- Optional product-photo selection and Firebase Storage upload.
+- Seller “My listings” view showing review status.
+- Admin review screen to approve or reject pending listings.
+- Loading, empty, offline/error states, and basic shop-safety guidance.
+- Expo EAS preview and production build profiles.
+- GitHub Actions TypeScript check and Android JavaScript bundle smoke test.
 
-## Firebase configuration
+## Firebase project
 
-1. In Firebase Console, open project `zimmarket-d4b35` and go to Project settings > Your apps.
-2. Use the existing web app configuration values. Do not create or upload a service-account key.
-3. Copy `.env.example` to a local `.env` file and fill in the values.
-4. Enable the Email/Password sign-in provider if it is not already enabled.
-5. Confirm Firestore security rules before testing account creation and listing submissions.
+The client configuration matches the public Firebase web-app configuration already published by the existing ZimMarket website. It can be overridden with `EXPO_PUBLIC_FIREBASE_*` environment variables. Firebase client configuration is not an admin credential; Firestore and Storage rules remain the security boundary.
 
-Expo public variables are bundled into the client. Firebase web config is not a substitute for security rules. Never place service-account JSON, private API keys, or admin credentials in this app.
+The app uses:
+- Project ID: `zimmarket-d4b35`
+- Firestore collections: `users`, `products`
+- Firebase Storage for optional listing photos
 
-## Existing data and approval workflow
+Enable Email/Password sign-in in Firebase Authentication if it is not already enabled.
 
-This app intentionally reuses the existing Firebase project. It does not modify Firestore rules, delete data, or change authentication providers. The client reads only products whose status is exactly `approved`. New seller listings are submitted with status `pending`.
+## Product moderation and compatibility
 
-**Important:** client-side filtering is not a security boundary. Firestore rules must enforce that customers can read only approved products and that sellers cannot self-approve listings. Existing admin approval logic must be verified before production use.
+The Expo app writes product documents with explicit fields and `status: "pending"`. Its public marketplace queries only products whose status is exactly `approved`. Admin approval changes the status to `approved`; rejection changes it to `rejected`. The UI itself is not a security boundary: Firestore rules must independently prevent sellers from approving their own products.
+
+The existing website uses older product field names such as `n`, `p`, `c`, `i`, and `d`; the Expo screens can map those fields for already-approved records. Legacy documents without an explicit approved status are intentionally not shown. They must be reviewed before anyone sets them to approved.
+
+## Security rules templates — not deployed
+
+- `firebase/firestore.rules.example`
+- `firebase/storage.rules.example`
+
+These are review templates only. No Firebase rules have been changed or deployed by this repository. **Do not paste them over your production rules without reviewing the current rules first.** The currently deployed web page has legacy product-query/demo-fallback behavior that must be updated to respect `status == "approved"` before applying rules that deny unfiltered public product queries. A rules change without that frontend fix could break the old website.
+
+Administrator access is granted by the trusted project owner, not by a public sign-up option. To use the review screen, a trusted administrator account must have `role: "admin"` in its user profile, and production rules must enforce admin-only changes server-side.
 
 ## Run locally
 
@@ -35,19 +51,23 @@ npm install
 npx expo start
 ```
 
-For type checking:
+For static bundle and type checks:
 
 ```bash
 npm run typecheck
+npx expo export --platform android
 ```
 
-## Before production release
+## Android build
 
-- Add the real Firebase app configuration in the Expo/EAS environment.
-- Verify the actual Firestore field names and existing rules.
-- Test registration, sign-in, seller profile creation, pending listing submission, and administrator approval.
-- Confirm only approved products are readable to customers through both the app and Firestore rules.
-- Add product image upload with Firebase Storage rules, order management, and payment integrations only after their backend contracts are confirmed.
-- Build and test an Android preview with Expo EAS before publishing.
+An EAS internal preview profile is configured in `eas.json` to produce an APK; the production profile creates an Android App Bundle. An actual APK has not been produced or installed on a device yet.
 
-No production build or deployment is claimed by this repository setup alone.
+## Not yet production-verified
+
+- Firestore and Storage rules need to be compared against the existing production rules and tested with customer, seller, and administrator accounts.
+- Seller submissions and photo uploads need a live rules-backed test.
+- The existing public website needs a separate update so it does not expose pending listings or display demo fallback products.
+- Orders, payment processing (EcoCash, OneMoney, cash on delivery and bank transfer), shipping, and refunds are not yet implemented.
+- A successful EAS Android build, installation test, and production deployment still need to be completed.
+
+The application must not be advertised as fully launched until the remaining backend/security and device-build checks pass.
