@@ -63,10 +63,12 @@ export default function AdminScreen() {
 
       setAccess("admin");
       const [productSnapshot, sellerSnapshot] = await Promise.all([
-        getDocs(query(collection(db, "products"), where("status", "==", "pending"))),
+        getDocs(collection(db, "products")),
         getDocs(query(collection(db, "users"), where("role", "==", "seller")))
       ]);
-      setListings(productSnapshot.docs.map((d) => ({ id: d.id, ...d.data() } as PendingListing)));
+      setListings(productSnapshot.docs
+        .map((d) => ({ id: d.id, ...d.data() } as PendingListing))
+        .filter((item) => item.status !== "approved" && item.status !== "rejected"));
       setSellers(sellerSnapshot.docs
         .map((d) => ({ id: d.id, ...d.data() } as SellerApplication))
         .filter((item) => item.sellerStatus === "pending" || !item.sellerStatus));
@@ -200,7 +202,7 @@ export default function AdminScreen() {
               <View key={item.id} style={styles.card}>
                 <Text style={styles.title}>{item.title || item.name || item.n || "Untitled listing"}</Text>
                 <Text style={styles.meta}>{item.category || item.c || "Uncategorised"} · {item.price === undefined && item.p === undefined ? "Price not provided" : `${item.currency || "USD"} ${item.price ?? item.p}`}</Text>
-                <Text style={styles.pending}>PENDING PRODUCT REVIEW</Text>
+                <Text style={styles.pending}>{item.status === "pending" ? "PENDING PRODUCT REVIEW" : "LEGACY LISTING · REVIEW REQUIRED"}</Text>
                 <View style={styles.actions}>
                   <Pressable accessibilityRole="button" disabled={busyId === item.id} style={[styles.approve, busyId === item.id && styles.disabled]} onPress={() => confirmListing(item, "approved")}><Text style={styles.actionText}>Approve product</Text></Pressable>
                   <Pressable accessibilityRole="button" disabled={busyId === item.id} style={[styles.reject, busyId === item.id && styles.disabled]} onPress={() => confirmListing(item, "rejected")}><Text style={styles.rejectText}>Reject</Text></Pressable>
