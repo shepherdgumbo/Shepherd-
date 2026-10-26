@@ -32,7 +32,9 @@ on:
         default: "NO"
 
 permissions:
+  checks: write
   contents: read
+  pull-requests: write
 
 jobs:
   deploy:
