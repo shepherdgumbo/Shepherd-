@@ -73,7 +73,7 @@ npx expo export --platform android
 
 ## Android build
 
-An Android debug APK workflow is configured at `.github/workflows/build-android-apk.yml`. It builds the native Android project and uploads `app-debug.apk` as a GitHub Actions artifact without needing an Expo token. The EAS preview and production profiles are also configured in `eas.json`; the EAS workflow is manual-only and requires the `EXPO_TOKEN` GitHub secret. **A newer debug APK was successfully built and uploaded on 2026-10-26** (workflow run `40271618731`, commit `d5ebcdc2c0e04b0b84b49d7f540121d2a1803312`). It is still a test build and has not yet been installed and tested on a physical Android device.
+A standalone Android preview APK workflow is configured at `.github/workflows/build-android-apk.yml`. It verifies the Android JavaScript bundle, regenerates the native project, builds the release variant, verifies the APK signature and uploads `ZimMarket-standalone-preview.apk` without requiring an Expo token. The EAS preview and production profiles are also configured in `eas.json`; the EAS workflow is manual-only and requires the `EXPO_TOKEN` GitHub secret. **The latest standalone preview APK was successfully built on 2026-10-26** (workflow run `40339344678`, commit `55b3c38029b391ed754328472f2688cbc0f8a3bb`). The bundle and signature checks pass, but installation and launch on a physical Android device have not yet been verified. This is a preview build, not a signed Play Store release.
 
 ## Amazon-style roadmap and current scope
 
@@ -112,6 +112,6 @@ The application must not be advertised as fully launched until production rules,
 
 ## Producing an installable APK
 
-The recommended no-token preview build is `.github/workflows/build-android-apk.yml`. The latest successful build is [workflow run 40271618731](https://github.com/shepherdgumbo/Shepherd-/actions/runs/40271618731). Download the `zimmarket-android-debug-apk` artifact from that run. Install it on an Android test device and verify sign-in, approved product browsing, seller application approval, product approval, order requests, and seller responses before inviting real users.
+The recommended no-token standalone preview build is `.github/workflows/build-android-apk.yml`. The latest successful build is [workflow run 40339344678](https://github.com/shepherdgumbo/Shepherd-/actions/runs/40339344678). Download the `zimmarket-standalone-preview-apk` artifact from that run. If an earlier debug copy is installed, uninstall it first if Android reports a package-signature conflict. Then verify sign-in, approved-only product browsing, seller application approval, product moderation, order requests and seller responses on a physical device before inviting real users.
 
 For cloud-managed EAS builds, `.github/workflows/build-android-preview.yml` is manual-only and requires the repository Actions secret `EXPO_TOKEN`. Add it under **Settings → Secrets and variables → Actions → New repository secret**. Never commit the token into source code.
