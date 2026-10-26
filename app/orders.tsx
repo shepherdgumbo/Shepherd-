@@ -97,7 +97,7 @@ export default function OrdersScreen() {
     } catch {
       Alert.alert(
         "Could not update order",
-        "The database rejected this change. Confirm that the production Firestore rules match firebase/firestore.rules.example and only allow the documented status transitions."
+        "The database rejected this change. Review the canonical firestore.rules file and confirm the deployed production rules allow private buyer/seller order queries and only the documented status transitions."
       );
     } finally {
       setBusyId("");
