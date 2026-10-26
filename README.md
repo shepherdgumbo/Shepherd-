@@ -73,7 +73,7 @@ npx expo export --platform android
 
 ## Android build
 
-An Android debug APK workflow is configured at `.github/workflows/build-android-apk.yml`. It builds the native Android project and uploads `app-debug.apk` as a GitHub Actions artifact without needing an Expo token. The EAS preview and production profiles are also configured in `eas.json`; the EAS workflow is manual-only and requires the `EXPO_TOKEN` GitHub secret. **A debug APK was successfully built and uploaded on 2026-10-24** (workflow run `40093565974`, commit `9f9014ee9681edbd725639315639db4acc4c0c8a`). It has not yet been installed and tested on a physical Android device.
+An Android debug APK workflow is configured at `.github/workflows/build-android-apk.yml`. It builds the native Android project and uploads `app-debug.apk` as a GitHub Actions artifact without needing an Expo token. The EAS preview and production profiles are also configured in `eas.json`; the EAS workflow is manual-only and requires the `EXPO_TOKEN` GitHub secret. **A newer debug APK was successfully built and uploaded on 2026-10-26** (workflow run `40271618731`, commit `d5ebcdc2c0e04b0b84b49d7f540121d2a1803312`). It is still a test build and has not yet been installed and tested on a physical Android device.
 
 ## Amazon-style roadmap and current scope
 
@@ -93,6 +93,13 @@ The workflow automatically attempts a **preview-only** deploy after web/app sour
 
 This source code/configuration does not itself update the old live Firebase website. The existing site will remain in place until a Hosting workflow run succeeds. Review the preview before considering a live deployment. After replacing the old website, verify registration/sign-in, approved-only product browsing, seller/admin permissions, cart/order requests, and PWA install behavior in a real browser. Firestore and Storage rules are deliberately not part of the Hosting deployment.
 
+## Current deployment status (2026-10-26)
+
+- **Vercel web build:** https://zimmarket-expo.vercel.app/ is deployed from commit `d5ebcdc2c0e04b0b84b49d7f540121d2a1803312`. The page responds successfully. The project is not currently listed as Git-linked in the Vercel account, so automatic deploys on every GitHub push are not yet confirmed.
+- **Firebase Hosting:** the latest workflow run is [40271618732](https://github.com/shepherdgumbo/Shepherd-/actions/runs/40271618732). TypeScript and Expo web export passed, but the workflow skipped the actual Firebase Hosting deploy because the repository secret `FIREBASE_SERVICE_ACCOUNT_ZIMMARKET_D4B35` is not configured.
+- **Production Firebase site:** this Vercel deployment does not replace `https://zimmarket-d4b35.web.app`. That site remains unchanged until a Firebase Hosting deployment succeeds.
+- **Security rules:** Firestore and Storage rules have not been deployed by the Hosting workflow. Compare the current production rules with `firestore.rules` and `storage.rules` before any rule replacement; do not loosen the rules to make deployment pass.
+
 ## Not yet production-verified
 
 - Firestore and Storage rules need to be compared against the existing production rules and tested with customer, seller, and administrator accounts.
@@ -105,6 +112,6 @@ The application must not be advertised as fully launched until production rules,
 
 ## Producing an installable APK
 
-The recommended no-token preview build is `.github/workflows/build-android-apk.yml`. The latest successful build is [workflow run 40093565974](https://github.com/shepherdgumbo/Shepherd-/actions/runs/40093565974). Download the `zimmarket-android-debug-apk` artifact from that run; it expires on 2026-11-07. Install it on an Android test device and verify sign-in, approved product browsing, seller application approval, product approval, order requests, and seller responses before inviting real users.
+The recommended no-token preview build is `.github/workflows/build-android-apk.yml`. The latest successful build is [workflow run 40271618731](https://github.com/shepherdgumbo/Shepherd-/actions/runs/40271618731). Download the `zimmarket-android-debug-apk` artifact from that run. Install it on an Android test device and verify sign-in, approved product browsing, seller application approval, product approval, order requests, and seller responses before inviting real users.
 
 For cloud-managed EAS builds, `.github/workflows/build-android-preview.yml` is manual-only and requires the repository Actions secret `EXPO_TOKEN`. Add it under **Settings → Secrets and variables → Actions → New repository secret**. Never commit the token into source code.
