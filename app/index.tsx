@@ -22,6 +22,14 @@ type Product = {
   status?: string;
 };
 
+
+function isAutomatedTestListing(item: Pick<Product, "title" | "name" | "description" | "sellerName">) {
+  const title = (item.title || item.name || "").toLowerCase();
+  const description = (item.description || "").toLowerCase();
+  const sellerName = (item.sellerName || "").toLowerCase();
+  return description.includes("automated zimmarket test listing")
+    || (title.includes("robot test") && sellerName.includes("test shop"));
+}
 const navy = "#0B1F3A";
 const blue = "#1769E0";
 const categories = ["All", "Phones", "Solar", "Fashion", "Furniture", "Electronics", "Groceries", "Computers", "Home & Garden", "Vehicles", "Services", "Accessories", "Appliances", "Other"];
@@ -71,7 +79,8 @@ export default function HomeScreen() {
           city: data.city,
         } as Product;
       });
-      setProducts(rows);
+      // Keep automated smoke-test listings out of the public marketplace.
+      setProducts(rows.filter((item) => !isAutomatedTestListing(item)));
     } catch {
       setError("We couldn't load listings. Check your connection or try again later.");
     } finally {
