@@ -1,4 +1,4 @@
-name: Build ZimMarket Android APK
+name: Build standalone ZimMarket Android APK
 
 on:
   push:
@@ -61,17 +61,54 @@ jobs:
       - name: Check TypeScript
         run: npm run typecheck
 
-      - name: Generate native Android project
-        run: npx expo prebuild --platform android --no-install
+      - name: Verify Android JavaScript bundle can be exported
+        run: npx expo export --platform android
 
-      - name: Build installable debug APK
+      - name: Generate clean native Android project
+        run: npx expo prebuild --clean --platform android --no-install
+
+      - name: Build standalone release APK
         working-directory: android
-        run: ./gradlew --no-daemon assembleDebug
+        run: ./gradlew --no-daemon assembleRelease
 
-      - name: Upload installable APK
+      - name: Sign if needed and verify standalone APK
+        shell: bash
+        working-directory: android
+        run: |
+          set -euo pipefail
+          APK="$(find app/build/outputs/apk/release -maxdepth 1 -type f -name '*.apk' | sort | head -n 1)"
+          if [ -z "$APK" ]; then
+            echo "::error::Gradle did not produce a release APK."
+            exit 1
+          fi
+
+          mkdir -p ../dist
+          OUT="../dist/ZimMarket-standalone-preview.apk"
+          APKSIGNER="${ANDROID_HOME}/build-tools/36.0.0/apksigner"
+
+          if "$APKSIGNER" verify "$APK" >/dev/null 2>&1; then
+            cp "$APK" "$OUT"
+            echo "Release APK already has a valid signature."
+          else
+            KEYSTORE="${RUNNER_TEMP}/zimmarket-preview.keystore"
+            keytool -genkeypair -noprompt -v \
+              -keystore "$KEYSTORE" -storepass "preview-only-pass" \
+              -alias zimmarket-preview -keypass "preview-only-pass" \
+              -dname "CN=ZimMarket Preview, OU=Testing, O=STG, L=Harare, ST=Harare, C=ZW" \
+              -keyalg RSA -keysize 2048 -validity 3650
+            "$APKSIGNER" sign \
+              --ks "$KEYSTORE" --ks-key-alias zimmarket-preview \
+              --ks-pass pass:preview-only-pass --key-pass pass:preview-only-pass \
+              --out "$OUT" "$APK"
+          fi
+
+          "$APKSIGNER" verify --verbose "$OUT"
+          ls -lh "$OUT"
+
+      - name: Upload standalone APK
         uses: actions/upload-artifact@v7
         with:
-          name: zimmarket-android-debug-apk
-          path: android/app/build/outputs/apk/debug/app-debug.apk
+          name: zimmarket-standalone-preview-apk
+          path: dist/ZimMarket-standalone-preview.apk
           if-no-files-found: error
           retention-days: 14
