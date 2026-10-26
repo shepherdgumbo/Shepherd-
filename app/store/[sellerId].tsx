@@ -7,6 +7,7 @@ import { db, firebaseConfigured } from "../../src/firebase";
 type StoreProduct = {
   id: string;
   title: string;
+  description: string;
   price: number | string | undefined;
   currency: string;
   category: string;
@@ -14,6 +15,14 @@ type StoreProduct = {
   sellerName: string;
   city: string;
 };
+
+function isAutomatedTestListing(item: Pick<StoreProduct, "title" | "description" | "sellerName">) {
+  const title = (item.title || "").toLowerCase();
+  const description = (item.description || "").toLowerCase();
+  const sellerName = (item.sellerName || "").toLowerCase();
+  return description.includes("automated zimmarket test listing")
+    || (title.includes("robot test") && sellerName.includes("test shop"));
+}
 
 export default function SellerStoreScreen() {
   const params = useLocalSearchParams<{ sellerId: string }>();
@@ -43,11 +52,12 @@ export default function SellerStoreScreen() {
           where("status", "==", "approved")
         ));
         if (!active) return;
-        setProducts(result.docs.map((item) => {
+        const mappedProducts = result.docs.map((item) => {
           const data = item.data();
           return {
             id: item.id,
             title: String(data.title ?? data.n ?? data.name ?? "Untitled listing"),
+            description: String(data.description ?? data.d ?? ""),
             price: data.price ?? data.p,
             currency: String(data.currency ?? data.currencyCode ?? "USD"),
             category: String(data.category ?? data.c ?? ""),
@@ -55,7 +65,8 @@ export default function SellerStoreScreen() {
             sellerName: String(data.sellerName ?? data.s ?? ""),
             city: String(data.city ?? "")
           };
-        }));
+        });
+        setProducts(mappedProducts.filter((item) => !isAutomatedTestListing(item)));
       } catch {
         if (active) setError("We couldn't load this seller's approved listings. Check your connection and Firestore rules.");
       } finally {
