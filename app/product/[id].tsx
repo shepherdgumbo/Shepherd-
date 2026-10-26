@@ -25,6 +25,14 @@ type Product = {
   status?: string;
 };
 
+
+function isAutomatedTestListing(item: Pick<Product, "title" | "name" | "description" | "sellerName">) {
+  const title = (item.title || item.name || "").toLowerCase();
+  const description = (item.description || "").toLowerCase();
+  const sellerName = (item.sellerName || "").toLowerCase();
+  return description.includes("automated zimmarket test listing")
+    || (title.includes("robot test") && sellerName.includes("test shop"));
+}
 export default function ProductDetailsScreen() {
   const params = useLocalSearchParams<{ id: string }>();
   const id = Array.isArray(params.id) ? params.id[0] : params.id;
@@ -56,24 +64,33 @@ export default function ProductDetailsScreen() {
       try {
         const result = await getDoc(doc(db, "products", id));
         if (!active) return;
-        if (!result.exists() || result.data().status !== "approved") {
+        if (!result.exists()) {
           setMessage("This listing is not available. Listings are displayed after administrator approval.");
         } else {
           const data = result.data();
-          setProduct({
-            ...data,
+          const testListing = isAutomatedTestListing({
             title: data.title ?? data.n ?? data.name,
             description: data.description ?? data.d,
-            price: data.price ?? data.p,
-            currency: data.currency ?? data.currencyCode ?? "USD",
-            category: data.category ?? data.c,
-            imageUrl: data.imageUrl ?? data.imageURL ?? data.image ?? data.i,
             sellerName: data.sellerName ?? data.s,
-            sellerWhatsApp: data.sellerWhatsApp ?? data.whatsapp ?? data.sellerPhone,
-            sellerEmail: data.sellerEmail,
-            sellerId: data.sellerId,
-            city: data.city,
-          } as Product);
+          });
+          if (data.status !== "approved" || testListing) {
+            setMessage("This listing is not available. Listings are displayed after administrator approval.");
+          } else {
+            setProduct({
+              ...data,
+              title: data.title ?? data.n ?? data.name,
+              description: data.description ?? data.d,
+              price: data.price ?? data.p,
+              currency: data.currency ?? data.currencyCode ?? "USD",
+              category: data.category ?? data.c,
+              imageUrl: data.imageUrl ?? data.imageURL ?? data.image ?? data.i,
+              sellerName: data.sellerName ?? data.s,
+              sellerWhatsApp: data.sellerWhatsApp ?? data.whatsapp ?? data.sellerPhone,
+              sellerEmail: data.sellerEmail,
+              sellerId: data.sellerId,
+              city: data.city,
+            } as Product);
+          }
         }
       } catch {
         if (active) setMessage("We couldn't load this product. Check your connection and try again.");
