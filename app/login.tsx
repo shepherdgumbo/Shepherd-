@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Alert, Pressable, SafeAreaView, StyleSheet, Text, TextInput, View } from "react-native";
 import { useRouter } from "expo-router";
-import { createUserWithEmailAndPassword, sendPasswordResetEmail, signInWithEmailAndPassword, updateProfile } from "firebase/auth";
+import { createUserWithEmailAndPassword, sendPasswordResetEmail, signInWithEmailAndPassword, updateProfile, type UserCredential } from "firebase/auth";
 import { doc, getDoc, serverTimestamp, setDoc } from "firebase/firestore";
 import { auth, db, firebaseConfigured } from "../src/firebase";
 
@@ -65,7 +65,7 @@ export default function LoginScreen() {
     let step: "authentication" | "profile" = "authentication";
     let accountCreated = false;
     try {
-      let credential;
+      let credential: UserCredential;
 
       if (register) {
         try {
@@ -116,7 +116,7 @@ export default function LoginScreen() {
         ? accountCreated ? "Account created; profile setup incomplete" : "Signed in; profile setup incomplete"
         : "Account problem";
       const detail = accountErrorMessage(code, step);
-      const suffix = code ? `\\n\\nError code: ${code}` : "";
+      const suffix = code ? `\n\nError code: ${code}` : "";
       Alert.alert(title, detail + suffix);
     } finally {
       setBusy(false);
@@ -138,7 +138,7 @@ export default function LoginScreen() {
       Alert.alert("Check your email", "If an account exists for this address, Firebase will send password-reset instructions.");
     } catch (error) {
       const code = firebaseErrorCode(error);
-      Alert.alert("Could not send email", accountErrorMessage(code, "authentication") + (code ? `\\n\\nError code: ${code}` : ""));
+      Alert.alert("Could not send email", accountErrorMessage(code, "authentication") + (code ? `\n\nError code: ${code}` : ""));
     }
   }
 
