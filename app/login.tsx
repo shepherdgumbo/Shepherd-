@@ -30,7 +30,7 @@ function accountErrorMessage(code: string, step: "authentication" | "profile"): 
     "auth/operation-not-allowed": "Email/password registration is disabled in this Firebase project. The provider must be enabled.",
     "auth/unauthorized-domain": "Firebase rejected this website's hostname. The exact hostname must be added to Firebase Authentication's authorised domains.",
     "auth/network-request-failed": "The connection to Firebase failed. Check your internet connection and try again.",
-    "auth/invalid-credential": "The email or password is incorrect. If you already registered, use Sign in or reset your password.",
+    "auth/invalid-credential": "Firebase rejected those login details. For a first account on this project, choose Create an account. If you already registered on zimmarket-d4b35, use Forgot password. Accounts from the older zimmarket-2f4d4 project do not automatically transfer.",
     "auth/email-already-in-use": "This email already has an account. Switch to Sign in and use the same password.",
     "auth/user-disabled": "This account has been disabled. Contact the project administrator.",
     "auth/too-many-requests": "Firebase temporarily blocked requests from this device. Wait before trying again.",
@@ -163,8 +163,8 @@ export default function LoginScreen() {
         <Text style={styles.heading}>{register ? "Join ZimMarket" : "Welcome back"}</Text>
         <Text style={styles.sub}>{register ? "Create a customer or seller account." : "Sign in to your marketplace account."}</Text>
         {register && <TextInput accessibilityLabel="Your name" style={styles.input} placeholder="Full name" value={name} onChangeText={setName} />}
-        <TextInput accessibilityLabel="Email address" style={styles.input} placeholder="Email address" autoCapitalize="none" keyboardType="email-address" value={email} onChangeText={setEmail} />
-        <TextInput accessibilityLabel="Password" style={styles.input} placeholder="Password (at least 6 characters)" secureTextEntry value={password} onChangeText={setPassword} />
+        <TextInput accessibilityLabel="Email address" style={styles.input} placeholder="Email address" autoCapitalize="none" autoCorrect={false} autoComplete="email" keyboardType="email-address" value={email} onChangeText={setEmail} />
+        <TextInput accessibilityLabel="Password" style={styles.input} placeholder="Password (at least 6 characters)" secureTextEntry autoCapitalize="none" autoCorrect={false} autoComplete={register ? "new-password" : "current-password"} value={password} onChangeText={setPassword} />
         {register && <View style={styles.roles}>
           <Pressable onPress={() => setRole("customer")} style={[styles.role, role === "customer" && styles.selected]}><Text style={role === "customer" ? styles.selectedText : styles.roleText}>Customer</Text></Pressable>
           <Pressable onPress={() => setRole("seller")} style={[styles.role, role === "seller" && styles.selected]}><Text style={role === "seller" ? styles.selectedText : styles.roleText}>Seller</Text></Pressable>
