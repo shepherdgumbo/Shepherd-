@@ -93,7 +93,7 @@ jobs:
 
       - name: Build standalone release APK
         working-directory: android
-        run: ./gradlew --no-daemon assembleRelease
+        run: ./gradlew --no-daemon assembleRelease -PreactNativeArchitectures=armeabi-v7a,arm64-v8a
 
       - name: Sign if needed and verify standalone APK
         shell: bash
@@ -127,6 +127,13 @@ jobs:
           fi
 
           "$APKSIGNER" verify --verbose "$OUT"
+          "$ANDROID_HOME/build-tools/36.0.0/aapt" dump badging "$OUT" | head -n 1
+          ABIS="$(unzip -Z1 "$OUT" | awk -F/ '$1 == "lib" && $3 ~ /\\.so$/ { print $2 }' | sort -u | paste -sd, -)"
+          if [ "$ABIS" != "arm64-v8a,armeabi-v7a" ]; then
+            echo "::error::Unexpected APK ABIs: $ABIS. Expected ARM32 and ARM64 only."
+            exit 1
+          fi
+          echo "Verified APK ABIs: $ABIS"
           ls -lh "$OUT"
 
       - name: Upload standalone APK
