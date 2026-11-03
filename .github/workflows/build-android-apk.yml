@@ -86,7 +86,7 @@ jobs:
               raise SystemExit("Could not locate Android defaultConfig block.")
           insert = match.end()
           newline = chr(10)
-          source = source[:insert] + newline + '        applicationIdSuffix ".preview"' + newline + '        versionNameSuffix "-preview"' + source[insert:]
+          source = source[:insert] + newline + '        applicationIdSuffix ".preview"' + newline + '        versionNameSuffix "-preview"' + newline + '        ndk { abiFilters "armeabi-v7a", "arm64-v8a" }' + source[insert:]
           path.write_text(source)
           PY
           grep -n "applicationIdSuffix" app/build.gradle
