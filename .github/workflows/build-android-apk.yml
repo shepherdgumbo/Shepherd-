@@ -67,6 +67,29 @@ jobs:
       - name: Generate clean native Android project
         run: npx expo prebuild --clean --platform android --no-install
 
+      # Preview APKs use a separate Android package ID so they can install
+      # alongside any older ZimMarket build, even if its preview signing key differs.
+      - name: Set separate preview application ID
+        shell: bash
+        working-directory: android
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          path = Path("app/build.gradle")
+          source = path.read_text()
+          if 'applicationIdSuffix ".preview"' in source:
+              raise SystemExit("Preview application ID suffix is already configured.")
+          match = re.search(r"(defaultConfig\\s*\\{)", source)
+          if not match:
+              raise SystemExit("Could not locate Android defaultConfig block.")
+          insert = match.end()
+          source = source[:insert] + '\\n        applicationIdSuffix ".preview"\\n        versionNameSuffix "-preview"' + source[insert:]
+          path.write_text(source)
+          PY
+          grep -n "applicationIdSuffix" app/build.gradle
+
       - name: Build standalone release APK
         working-directory: android
         run: ./gradlew --no-daemon assembleRelease
