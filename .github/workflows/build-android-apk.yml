@@ -81,11 +81,12 @@ jobs:
           source = path.read_text()
           if 'applicationIdSuffix ".preview"' in source:
               raise SystemExit("Preview application ID suffix is already configured.")
-          match = re.search(r"(defaultConfig\\s*\\{)", source)
+          match = re.search(r"(defaultConfig\s*\{)", source)
           if not match:
               raise SystemExit("Could not locate Android defaultConfig block.")
           insert = match.end()
-          source = source[:insert] + '\\n        applicationIdSuffix ".preview"\\n        versionNameSuffix "-preview"' + source[insert:]
+          newline = chr(10)
+          source = source[:insert] + newline + '        applicationIdSuffix ".preview"' + newline + '        versionNameSuffix "-preview"' + source[insert:]
           path.write_text(source)
           PY
           grep -n "applicationIdSuffix" app/build.gradle
