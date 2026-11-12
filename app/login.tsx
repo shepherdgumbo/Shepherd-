@@ -76,17 +76,10 @@ export default function LoginScreen() {
       let credential: UserCredential;
 
       if (register) {
-        try {
-          credential = await createUserWithEmailAndPassword(auth, normalizedEmail, password);
-          accountCreated = true;
-        } catch (error) {
-          // Recover a prior attempt that created the Auth account but did not
-          // finish writing its Firestore profile. Never create a second user.
-          if (firebaseErrorCode(error) !== "auth/email-already-in-use") {
-            throw error;
-          }
-          credential = await signInWithEmailAndPassword(auth, normalizedEmail, password);
-        }
+        // Creating an account must never silently turn into a sign-in attempt.
+        // If this email already exists, ask the user to switch to Sign in.
+        credential = await createUserWithEmailAndPassword(auth, normalizedEmail, password);
+        accountCreated = true;
 
         step = "profile";
         if (accountCreated) {
